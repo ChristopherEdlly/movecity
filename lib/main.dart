@@ -4,7 +4,7 @@ void main() {
   runApp(const MoveCity());
 }
 
-class MoveCity extends StatelessWidget {
+class MoveCity extends StatelessWidget{
   const MoveCity({super.key});
 
   @override
@@ -23,3 +23,4 @@ class MoveCity extends StatelessWidget {
     );
   }
 }
+
