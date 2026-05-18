@@ -1,26 +1,19 @@
 import 'package:flutter/material.dart';
+import 'home/home.dart';
 
 void main() {
-  runApp(const MoveCity());
+  runApp(const MyApp());
 }
 
-class MoveCity extends StatelessWidget{
-  const MoveCity({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'MoveCity',
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text('MoveCity'),
-        ),
-        body: Center(
-          child: Text('MoveCity'),
-        ),
-      ),
+      title: 'MoveCity',
+      home: const HomeScreen(),
     );
   }
 }
-
