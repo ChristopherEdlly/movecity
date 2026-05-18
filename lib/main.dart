@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'historico.dart';
 
 void main() {
   runApp(const MoveCity());
 }
 
-class MoveCity extends StatelessWidget{
+class MoveCity extends StatelessWidget {
   const MoveCity({super.key});
 
   @override
@@ -12,14 +13,11 @@ class MoveCity extends StatelessWidget{
     return MaterialApp(
       title: 'MoveCity',
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text('MoveCity'),
-        ),
-        body: Center(
-          child: Text('MoveCity'),
-        ),
+      theme: ThemeData(
+        primaryColor: const Color(0xFF2E7D32),
+        scaffoldBackgroundColor: Colors.white,
       ),
+      home: const HistoricoPage(),
     );
   }
 }
