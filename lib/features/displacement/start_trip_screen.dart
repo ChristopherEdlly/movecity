@@ -21,7 +21,7 @@ class _StartTripScreenState extends State<StartTripScreen> {
     'Bicicleta',
   ];
 
-  TimeOfDay _departureTime = const TimeOfDay(hour: 7, minute: 42);
+  TimeOfDay _departureTime = TimeOfDay.now();
   String _selectedTransport = 'Ônibus';
 
   @override
@@ -227,15 +227,18 @@ class _StartTripScreenState extends State<StartTripScreen> {
       context: context,
       initialTime: _departureTime,
       builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: _primaryGreen,
-              onPrimary: Colors.white,
-              onSurface: Color(0xFF202221),
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: const ColorScheme.light(
+                primary: _primaryGreen,
+                onPrimary: Colors.white,
+                onSurface: Color(0xFF202221),
+              ),
             ),
+            child: child!,
           ),
-          child: child!,
         );
       },
     );
