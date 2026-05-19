@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
-import 'home/home.dart';
+import 'features/home/home_screen.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'MoveCity',
-      home: const HomeScreen(),
+      title: 'App',
+      theme: ThemeData(),
+      home: const HomeScreen(), // <-- aqui
     );
   }
 }
