@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'features/home/home_screen.dart';
+import 'features/rotas/minhas_rotas_screen.dart';
 import 'auth/login_screen.dart';
 import 'auth/register_screen.dart';
 import 'auth/forgot_password_screen.dart';
@@ -9,6 +10,7 @@ class AppRoutes {
   static const login = '/login';
   static const registration = '/registration';
   static const forgotPassword = '/forgot-password';
+  static const minhasRotas = '/rotas';
 
   static Route<dynamic>? onGenerate(RouteSettings settings) {
     switch (settings.name) {
@@ -32,6 +34,11 @@ class AppRoutes {
         return MaterialPageRoute(
           builder: (_) => const ForgotPasswordScreen(),
         );
+
+      // ROTAS
+      case minhasRotas:
+        return MaterialPageRoute(builder: (_) => const MinhasRotasScreen());
+
       default:
         return null;
     }
