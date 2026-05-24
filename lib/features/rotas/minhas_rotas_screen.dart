@@ -1,0 +1,242 @@
+import 'package:flutter/material.dart';
+import 'rotas_mock_dados.dart';
+import 'editar_rota_screen.dart';
+import 'criar_rota_screen.dart';
+
+class MinhasRotasScreen extends StatefulWidget {
+  const MinhasRotasScreen({super.key});
+
+  @override
+  State<MinhasRotasScreen> createState() => _MinhasRotasScreenState();
+}
+
+class _MinhasRotasScreenState extends State<MinhasRotasScreen> {
+  final TextEditingController _buscaController = TextEditingController();
+  String _termoBusca = '';
+
+  @override
+  void dispose() {
+    _buscaController.dispose();
+    super.dispose();
+  }
+
+  List<DadosRota> get _rotasFiltradas {
+    if (_termoBusca.trim().isEmpty) return RotasMockDados.rotas;
+    final termo = _termoBusca.toLowerCase();
+    return RotasMockDados.rotas
+        .where((r) => r.nome.toLowerCase().contains(termo))
+        .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rotas = _rotasFiltradas;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF3F3F2),
+      bottomNavigationBar: _buildBarraNavegacao(),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildCabecalho(),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _buildCampoBusca(),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+              itemCount: rotas.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (context, index) {
+                return _buildCartaoRota(rotas[index]);
+              },
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          TextButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CriarRotaScreen()),
+              );
+            },
+            child: const Text(
+              'Nova rota',
+              style: TextStyle(
+                color: Color(0xFF1D9E75),
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CriarRotaScreen()),
+              );
+            },
+            backgroundColor: const Color(0xFF1D9E75),
+            child: const Icon(Icons.add, color: Colors.white),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCabecalho() {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFF1D9E75),
+      padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Minhas rotas',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${RotasMockDados.rotas.length} rotas cadastradas',
+            style: const TextStyle(fontSize: 13, color: Color(0xFFC7F0DF)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCampoBusca() {
+    return TextField(
+      controller: _buscaController,
+      onChanged: (value) => setState(() => _termoBusca = value),
+      decoration: InputDecoration(
+        hintText: 'Buscar rota...',
+        hintStyle: const TextStyle(color: Color(0xFF9D9D9D), fontSize: 14),
+        prefixIcon: const Icon(Icons.search, color: Color(0xFF8A8A8A)),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE6E6E3)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF1D9E75), width: 1.4),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCartaoRota(DadosRota rota) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => EditarRotaScreen(rota: rota)),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(color: rota.cor, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    rota.nome,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${rota.transporte} · ~${rota.tempoEstimadoMin} min',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE9F3DE),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${rota.usos}×',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF3B6D11),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  rota.ultimoUso,
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                ),
+              ],
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBarraNavegacao() {
+    return BottomNavigationBar(
+      currentIndex: 2,
+      selectedItemColor: const Color(0xFF1D9E75),
+      unselectedItemColor: Colors.grey,
+      selectedFontSize: 10,
+      unselectedFontSize: 10,
+      type: BottomNavigationBarType.fixed,
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Início'),
+        BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline), label: 'Registrar'),
+        BottomNavigationBarItem(icon: Icon(Icons.list_outlined), label: 'Rotas'),
+        BottomNavigationBarItem(icon: Icon(Icons.history_outlined), label: 'Histórico'),
+      ],
+    );
+  }
+}
