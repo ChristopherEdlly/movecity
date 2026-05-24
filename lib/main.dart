@@ -1,24 +1,17 @@
 import 'package:flutter/material.dart';
-import 'historico.dart';
+import 'features/home/home_screen.dart';
 
-void main() {
-  runApp(const MoveCity());
-}
+void main() => runApp(const MyApp());
 
-class MoveCity extends StatelessWidget {
-  const MoveCity({super.key});
-
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'MoveCity',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primaryColor: const Color(0xFF2E7D32),
-        scaffoldBackgroundColor: Colors.white,
-      ),
-      home: const HistoricoPage(),
+      theme: ThemeData(),
+      home: const HomeScreen(),
     );
   }
 }
-
