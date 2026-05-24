@@ -5,7 +5,6 @@ import 'auth/register_screen.dart';
 import 'auth/forgot_password_screen.dart';
 import 'package:movecity/app_routes.dart';
 
-
 void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
@@ -16,7 +15,6 @@ class MyApp extends StatelessWidget {
       title: 'App',
       theme: ThemeData(),
       initialRoute: AppRoutes.login,
-
       onGenerateRoute: AppRoutes.onGenerate,
     );
   }
