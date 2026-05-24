@@ -8,10 +8,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'MoveCity',
-      debugShowCheckedModeBanner: false,
+      title: 'App',
       theme: ThemeData(),
-      home: const HomeScreen(),
+      home: const HomeScreen(), // <-- aqui
     );
   }
 }

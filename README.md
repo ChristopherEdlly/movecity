@@ -1,18 +1,38 @@
-# movecity
+# MoveCity — Mobilidade Urbana
 
+Aplicativo mobile para registro e acompanhamento de deslocamentos urbanos diários.
 
-A new Flutter project.
+---
 
-## Getting Started
+## 👥 Divisão de Tarefas
 
-This project is a starting point for a Flutter application.
+| Nome | Responsabilidade |
+|------|-----------------|
+| Christopher Edlly Caldas dos Santos | Setup do projeto + Fluxo Home (tela principal com dashboard, stats e rotas recentes) |
+| Júlia Carolina Bispo Vasconcelos | Fluxo de Autenticação (Login → Cadastro → Esqueceu a Senha) |
+| Mütter Mendes Espósito Nunes | Fluxo de Deslocamento (Selecionar Rota → Iniciar Deslocamento → Em Trânsito) |
+| Arthur Jovino de Assis Pereira | Fluxo de Rotas (Minhas Rotas → Nova Rota → Editar Rota → Confirmar Exclusão) |
+| João Pedro de Araújo Martins Silva Lima | Fluxo de Histórico (Histórico → Detalhe do Deslocamento → Editar Deslocamento) |
+---
 
-A few resources to get you started if this is your first Flutter project:
+## 📱 Protótipo
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+https://www.figma.com/design/lb8UE1buHMr8ll1poQVlnl/MoveCity
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+---
+
+## 🚀 Como rodar o projeto
+
+```bash
+git clone https://github.com/ChristopherEdlly/movecity.git
+cd movecity
+flutter pub get
+flutter run
+```
+
+---
+
+## 🛠️ Tecnologias
+
+- Flutter
+- Dart
