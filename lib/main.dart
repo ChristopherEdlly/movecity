@@ -9,7 +9,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'App',
-      theme: ThemeData(),
+      theme: ThemeData(
+        fontFamily: 'Inter',
+      ),
       initialRoute: AppRoutes.login,
       onGenerateRoute: AppRoutes.onGenerate,
     );
