@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'rotas_mock_dados.dart';
+import '../../core/mock/banco_mock.dart';
+import '../../core/widgets/barra_navegacao.dart';
 
 class EditarRotaScreen extends StatefulWidget {
   final DadosRota rota;
@@ -132,7 +133,7 @@ class _EditarRotaScreenState extends State<EditarRotaScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F3F2),
-      bottomNavigationBar: _buildBarraNavegacao(),
+      bottomNavigationBar: const BarraNavegacao(indiceSelecionado: 2),
       body: Column(
         children: [
           _buildCabecalho(context),
@@ -202,11 +203,7 @@ class _EditarRotaScreenState extends State<EditarRotaScreen> {
                       ),
                       child: const Text(
                         'Salvar alterações',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
@@ -223,11 +220,7 @@ class _EditarRotaScreenState extends State<EditarRotaScreen> {
                       ),
                       child: const Text(
                         'Excluir rota',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(color: Colors.red, fontSize: 15, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
@@ -333,9 +326,7 @@ class _EditarRotaScreenState extends State<EditarRotaScreen> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: _transporteSelecionado == opcao
-                          ? Colors.white
-                          : Colors.grey,
+                      color: _transporteSelecionado == opcao ? Colors.white : Colors.grey,
                     ),
                   ),
                 ),
@@ -343,23 +334,6 @@ class _EditarRotaScreenState extends State<EditarRotaScreen> {
             ),
         ],
       ),
-    );
-  }
-
-  Widget _buildBarraNavegacao() {
-    return BottomNavigationBar(
-      currentIndex: 2,
-      selectedItemColor: const Color(0xFF1D9E75),
-      unselectedItemColor: Colors.grey,
-      selectedFontSize: 10,
-      unselectedFontSize: 10,
-      type: BottomNavigationBarType.fixed,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Início'),
-        BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline), label: 'Registrar'),
-        BottomNavigationBarItem(icon: Icon(Icons.list_outlined), label: 'Rotas'),
-        BottomNavigationBarItem(icon: Icon(Icons.history_outlined), label: 'Histórico'),
-      ],
     );
   }
 }
