@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app_routes.dart';
 
 class InTransitScreen extends StatelessWidget {
   const InTransitScreen({super.key});
@@ -379,7 +380,11 @@ class _ResumoViagem extends StatelessWidget {
             width: double.infinity,
             height: 48,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                context,
+                AppRoutes.home,
+                (_) => false,
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: _verde,
                 foregroundColor: Colors.white,
