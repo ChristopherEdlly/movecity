@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'features/home/home_screen.dart';
 import 'features/rotas/minhas_rotas_screen.dart';
+import 'features/historico/historico_screen.dart';
+import 'features/displacement/select_route_screen.dart';
 import 'auth/login_screen.dart';
 import 'auth/register_screen.dart';
 import 'auth/forgot_password_screen.dart';
@@ -11,33 +13,31 @@ class AppRoutes {
   static const registration = '/registration';
   static const forgotPassword = '/forgot-password';
   static const minhasRotas = '/rotas';
+  static const historico = '/historico';
+  static const registrar = '/registrar';
 
   static Route<dynamic>? onGenerate(RouteSettings settings) {
     switch (settings.name) {
       case home:
         return MaterialPageRoute(builder: (_) => const HomeScreen());
 
-         // LOGIN
       case login:
-        return MaterialPageRoute(
-          builder: (_) => const LoginScreen(),
-        );
+        return MaterialPageRoute(builder: (_) => const LoginScreen());
 
-      // CADASTRO
       case registration:
-        return MaterialPageRoute(
-          builder: (_) => const RegistrationScreen(),
-        );
+        return MaterialPageRoute(builder: (_) => const RegistrationScreen());
 
-      // ESQUECEU SENHA
       case forgotPassword:
-        return MaterialPageRoute(
-          builder: (_) => const ForgotPasswordScreen(),
-        );
+        return MaterialPageRoute(builder: (_) => const ForgotPasswordScreen());
 
-      // ROTAS
       case minhasRotas:
         return MaterialPageRoute(builder: (_) => const MinhasRotasScreen());
+
+      case historico:
+        return MaterialPageRoute(builder: (_) => const HistoricoScreen());
+
+      case registrar:
+        return MaterialPageRoute(builder: (_) => const SelectRouteScreen());
 
       default:
         return null;

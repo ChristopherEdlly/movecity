@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/mock/banco_mock.dart';
+import '../../core/widgets/barra_navegacao.dart';
 
 class SelectRouteScreen extends StatefulWidget {
   const SelectRouteScreen({super.key});
@@ -8,89 +10,69 @@ class SelectRouteScreen extends StatefulWidget {
 }
 
 class _SelectRouteScreenState extends State<SelectRouteScreen> {
-  static const Color _primaryGreen = Color(0xFF1D9E75);
-  static const Color _background = Color(0xFFF3F3F2);
+  static const Color _verde = Color(0xFF1D9E75);
+  static const Color _fundo = Color(0xFFF3F3F2);
 
-  final TextEditingController _searchController = TextEditingController();
-  int _selectedRouteIndex = 0;
-  String _searchTerm = '';
-
-  final List<_RouteOption> _routes = const [
-    _RouteOption(
-      name: 'Casa ➜ IFS',
-      details: 'Ônibus · ~35 min',
-      uses: '23 usos',
-      color: Color(0xFF1D9E75),
-    ),
-    _RouteOption(
-      name: 'IFS ➜ Trabalho',
-      details: 'A pé · ~12 min',
-      uses: '18 usos',
-      color: Color(0xFFBA7517),
-    ),
-    _RouteOption(
-      name: 'Casa ➜ Shopping Jardins',
-      details: 'Carro · ~20 min',
-      uses: '7 usos',
-      color: Color(0xFF3E7DD6),
-    ),
-    _RouteOption(
-      name: 'Trabalho ➜ Academia',
-      details: 'A pé · ~8 min',
-      uses: '12 usos',
-      color: Color(0xFF8F62D9),
-    ),
-  ];
+  final TextEditingController _buscaController = TextEditingController();
+  int _indiceRotaSelecionada = 0;
+  String _termoBusca = '';
 
   @override
   void dispose() {
-    _searchController.dispose();
+    _buscaController.dispose();
     super.dispose();
+  }
+
+  List<_RotaIndexada> get _rotasFiltradas {
+    if (_termoBusca.trim().isEmpty) {
+      return [
+        for (var i = 0; i < BancoMock.rotas.length; i++)
+          _RotaIndexada(index: i, rota: BancoMock.rotas[i]),
+      ];
+    }
+    final termo = _termoBusca.toLowerCase();
+    return [
+      for (var i = 0; i < BancoMock.rotas.length; i++)
+        if (BancoMock.rotas[i].nome.toLowerCase().contains(termo))
+          _RotaIndexada(index: i, rota: BancoMock.rotas[i]),
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
-    final filteredRoutes = _filteredRoutes;
+    final rotasFiltradas = _rotasFiltradas;
 
     return Scaffold(
-      backgroundColor: _background,
-      bottomNavigationBar: _buildBottomNavigation(),
+      backgroundColor: _fundo,
+      bottomNavigationBar: const BarraNavegacao(indiceSelecionado: 1),
       body: SafeArea(
         top: false,
         child: Column(
           children: [
-            _buildHeader(context),
+            _buildCabecalho(context),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 18, 16, 120),
                 children: [
-                  _buildStepper(),
+                  _buildIndicadorPassos(),
                   const SizedBox(height: 20),
-                  _buildSearchField(),
+                  _buildCampoBusca(),
                   const SizedBox(height: 22),
                   const Text(
                     'Suas rotas',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF202221),
-                    ),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF202221)),
                   ),
                   const SizedBox(height: 12),
-                  if (filteredRoutes.isEmpty)
-                    _buildEmptyState()
+                  if (rotasFiltradas.isEmpty)
+                    _buildEstadoVazio()
                   else
-                    ...filteredRoutes.map(
-                      (indexedRoute) => Padding(
+                    ...rotasFiltradas.map(
+                      (item) => Padding(
                         padding: const EdgeInsets.only(bottom: 10),
-                        child: _RouteCard(
-                          route: indexedRoute.route,
-                          isSelected: indexedRoute.index == _selectedRouteIndex,
-                          onTap: () {
-                            setState(() {
-                              _selectedRouteIndex = indexedRoute.index;
-                            });
-                          },
+                        child: _CartaoRota(
+                          rota: item.rota,
+                          selecionado: item.index == _indiceRotaSelecionada,
+                          aoTocar: () => setState(() => _indiceRotaSelecionada = item.index),
                         ),
                       ),
                     ),
@@ -109,21 +91,16 @@ class _SelectRouteScreenState extends State<SelectRouteScreen> {
           child: ElevatedButton(
             onPressed: () {},
             style: ElevatedButton.styleFrom(
-              backgroundColor: _primaryGreen,
+              backgroundColor: _verde,
               foregroundColor: Colors.white,
               elevation: 8,
-              shadowColor: _primaryGreen.withValues(alpha: 0.28),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+              shadowColor: _verde.withValues(alpha: 0.28),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  'Confirmar rota',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                ),
+                Text('Confirmar rota', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
                 SizedBox(width: 8),
                 Icon(Icons.arrow_forward, size: 20),
               ],
@@ -134,37 +111,12 @@ class _SelectRouteScreenState extends State<SelectRouteScreen> {
     );
   }
 
-  List<_IndexedRoute> get _filteredRoutes {
-    if (_searchTerm.trim().isEmpty) {
-      return [
-        for (var i = 0; i < _routes.length; i++)
-          _IndexedRoute(index: i, route: _routes[i]),
-      ];
-    }
-
-    final normalizedTerm = _normalize(_searchTerm);
-    return [
-      for (var i = 0; i < _routes.length; i++)
-        if (_normalize(_routes[i].name).contains(normalizedTerm))
-          _IndexedRoute(index: i, route: _routes[i]),
-    ];
-  }
-
-  String _normalize(String value) {
-    return value.toLowerCase().replaceAll('á', 'a').replaceAll('é', 'e');
-  }
-
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildCabecalho(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(
-        8,
-        MediaQuery.of(context).padding.top + 8,
-        20,
-        24,
-      ),
+      padding: EdgeInsets.fromLTRB(8, MediaQuery.of(context).padding.top + 8, 20, 24),
       decoration: const BoxDecoration(
-        color: _primaryGreen,
+        color: _verde,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       child: Row(
@@ -173,7 +125,6 @@ class _SelectRouteScreenState extends State<SelectRouteScreen> {
           IconButton(
             onPressed: () => Navigator.maybePop(context),
             icon: const Icon(Icons.arrow_back, color: Colors.white),
-            tooltip: 'Voltar',
           ),
           const SizedBox(width: 4),
           const Expanded(
@@ -184,11 +135,7 @@ class _SelectRouteScreenState extends State<SelectRouteScreen> {
                 children: [
                   Text(
                     'Iniciar deslocamento',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                   SizedBox(height: 6),
                   Text(
@@ -204,29 +151,25 @@ class _SelectRouteScreenState extends State<SelectRouteScreen> {
     );
   }
 
-  Widget _buildStepper() {
+  Widget _buildIndicadorPassos() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: const Row(
         children: [
-          _StepIndicator(number: '1', label: 'Rota', isActive: true),
-          Expanded(child: _StepDivider()),
-          _StepIndicator(number: '2', label: 'Saída'),
-          Expanded(child: _StepDivider()),
-          _StepIndicator(number: '3', label: 'Chegada'),
+          _IndicadorPasso(numero: '1', label: 'Rota', ativo: true),
+          Expanded(child: _DivisorPasso()),
+          _IndicadorPasso(numero: '2', label: 'Saída'),
+          Expanded(child: _DivisorPasso()),
+          _IndicadorPasso(numero: '3', label: 'Chegada'),
         ],
       ),
     );
   }
 
-  Widget _buildSearchField() {
+  Widget _buildCampoBusca() {
     return TextField(
-      controller: _searchController,
-      onChanged: (value) {
-        setState(() {
-          _searchTerm = value;
-        });
-      },
+      controller: _buscaController,
+      onChanged: (value) => setState(() => _termoBusca = value),
       decoration: InputDecoration(
         hintText: 'Buscar rota...',
         hintStyle: const TextStyle(color: Color(0xFF9D9D9D), fontSize: 14),
@@ -240,13 +183,13 @@ class _SelectRouteScreenState extends State<SelectRouteScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: _primaryGreen, width: 1.4),
+          borderSide: const BorderSide(color: _verde, width: 1.4),
         ),
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEstadoVazio() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       decoration: BoxDecoration(
@@ -262,56 +205,27 @@ class _SelectRouteScreenState extends State<SelectRouteScreen> {
       ),
     );
   }
-
-  Widget _buildBottomNavigation() {
-    return BottomNavigationBar(
-      currentIndex: 1,
-      selectedItemColor: _primaryGreen,
-      unselectedItemColor: Colors.grey,
-      selectedFontSize: 10,
-      unselectedFontSize: 10,
-      type: BottomNavigationBarType.fixed,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          label: 'Início',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.add_circle_outline),
-          label: 'Registrar',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.list_outlined),
-          label: 'Rotas',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.history_outlined),
-          label: 'Histórico',
-        ),
-      ],
-    );
-  }
 }
 
-class _RouteCard extends StatelessWidget {
-  const _RouteCard({
-    required this.route,
-    required this.isSelected,
-    required this.onTap,
+class _CartaoRota extends StatelessWidget {
+  final DadosRota rota;
+  final bool selecionado;
+  final VoidCallback aoTocar;
+
+  const _CartaoRota({
+    required this.rota,
+    required this.selecionado,
+    required this.aoTocar,
   });
 
-  final _RouteOption route;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  static const Color _primaryGreen = Color(0xFF1D9E75);
+  static const Color _verde = Color(0xFF1D9E75);
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: aoTocar,
         borderRadius: BorderRadius.circular(16),
         child: Ink(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -319,8 +233,8 @@ class _RouteCard extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isSelected ? _primaryGreen : const Color(0xFFEAEAE7),
-              width: isSelected ? 1.5 : 1,
+              color: selecionado ? _verde : const Color(0xFFEAEAE7),
+              width: selecionado ? 1.5 : 1,
             ),
             boxShadow: [
               BoxShadow(
@@ -335,10 +249,7 @@ class _RouteCard extends StatelessWidget {
               Container(
                 width: 14,
                 height: 14,
-                decoration: BoxDecoration(
-                  color: route.color,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: rota.cor, shape: BoxShape.circle),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -346,7 +257,7 @@ class _RouteCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      route.name,
+                      rota.nome,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -357,11 +268,8 @@ class _RouteCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      route.details,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF7A7A7A),
-                      ),
+                      '${rota.transporte} · ~${rota.tempoEstimadoMin} min',
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF7A7A7A)),
                     ),
                   ],
                 ),
@@ -371,7 +279,7 @@ class _RouteCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    route.uses,
+                    '${rota.usos} usos',
                     style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFF777777),
@@ -384,16 +292,14 @@ class _RouteCard extends StatelessWidget {
                     width: 22,
                     height: 22,
                     decoration: BoxDecoration(
-                      color: isSelected ? _primaryGreen : Colors.white,
+                      color: selecionado ? _verde : Colors.white,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isSelected
-                            ? _primaryGreen
-                            : const Color(0xFFC9C9C9),
+                        color: selecionado ? _verde : const Color(0xFFC9C9C9),
                         width: 1.5,
                       ),
                     ),
-                    child: isSelected
+                    child: selecionado
                         ? const Icon(Icons.check, size: 15, color: Colors.white)
                         : null,
                   ),
@@ -407,22 +313,18 @@ class _RouteCard extends StatelessWidget {
   }
 }
 
-class _StepIndicator extends StatelessWidget {
-  const _StepIndicator({
-    required this.number,
-    required this.label,
-    this.isActive = false,
-  });
-
-  final String number;
+class _IndicadorPasso extends StatelessWidget {
+  final String numero;
   final String label;
-  final bool isActive;
+  final bool ativo;
 
-  static const Color _primaryGreen = Color(0xFF1D9E75);
+  const _IndicadorPasso({required this.numero, required this.label, this.ativo = false});
+
+  static const Color _verde = Color(0xFF1D9E75);
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? _primaryGreen : const Color(0xFFB5B5B5);
+    final cor = ativo ? _verde : const Color(0xFFB5B5B5);
 
     return Column(
       children: [
@@ -431,16 +333,16 @@ class _StepIndicator extends StatelessWidget {
           height: 32,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isActive ? _primaryGreen : Colors.white,
+            color: ativo ? _verde : Colors.white,
             shape: BoxShape.circle,
-            border: Border.all(color: color, width: 1.5),
+            border: Border.all(color: cor, width: 1.5),
           ),
           child: Text(
-            number,
+            numero,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w800,
-              color: isActive ? Colors.white : color,
+              color: ativo ? Colors.white : cor,
             ),
           ),
         ),
@@ -449,8 +351,8 @@ class _StepIndicator extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-            color: color,
+            fontWeight: ativo ? FontWeight.w700 : FontWeight.w500,
+            color: cor,
           ),
         ),
       ],
@@ -458,8 +360,8 @@ class _StepIndicator extends StatelessWidget {
   }
 }
 
-class _StepDivider extends StatelessWidget {
-  const _StepDivider();
+class _DivisorPasso extends StatelessWidget {
+  const _DivisorPasso();
 
   @override
   Widget build(BuildContext context) {
@@ -471,23 +373,9 @@ class _StepDivider extends StatelessWidget {
   }
 }
 
-class _RouteOption {
-  const _RouteOption({
-    required this.name,
-    required this.details,
-    required this.uses,
-    required this.color,
-  });
-
-  final String name;
-  final String details;
-  final String uses;
-  final Color color;
-}
-
-class _IndexedRoute {
-  const _IndexedRoute({required this.index, required this.route});
-
+class _RotaIndexada {
   final int index;
-  final _RouteOption route;
+  final DadosRota rota;
+
+  const _RotaIndexada({required this.index, required this.rota});
 }

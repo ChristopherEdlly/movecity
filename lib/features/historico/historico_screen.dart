@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/mock/banco_mock.dart';
+import '../../core/widgets/barra_navegacao.dart';
 
 class HistoricoScreen extends StatelessWidget {
   const HistoricoScreen({super.key});
@@ -16,6 +18,7 @@ class HistoricoScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      bottomNavigationBar: const BarraNavegacao(indiceSelecionado: 3),
       body: Column(
         children: [
           _buildCabecalho(),
@@ -37,20 +40,6 @@ class HistoricoScreen extends StatelessWidget {
               ),
             ),
           ),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 3,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF1D9E75),
-        unselectedItemColor: Colors.black54,
-        selectedFontSize: 10,
-        unselectedFontSize: 10,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Início'),
-          BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline), label: 'Registrar'),
-          BottomNavigationBarItem(icon: Icon(Icons.list_outlined), label: 'Rotas'),
-          BottomNavigationBarItem(icon: Icon(Icons.history_outlined), label: 'Histórico'),
         ],
       ),
     );
@@ -123,7 +112,7 @@ class HistoricoScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          Expanded(child: _CartaoResumo(label: 'Deslocamentos', valor: '31')),
+          Expanded(child: _CartaoResumo(label: 'Deslocamentos', valor: '${BancoMock.historico.length}')),
           const SizedBox(width: 12),
           Expanded(child: _CartaoResumo(label: 'Tempo total', valor: '22h')),
           const SizedBox(width: 12),
@@ -168,71 +157,17 @@ class _ListaHistorico extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const entradas = [
-      _EntradaHistorico(
-        titulo: 'Casa → IFS',
-        subtitulo: 'Hoje, 07:42',
-        duracao: '37 min',
-        cor: Color(0xFF1D9E75),
-        observacao: '',
-      ),
-      _EntradaHistorico(
-        titulo: 'IFS → Trabalho',
-        subtitulo: 'Hoje, 13:10',
-        duracao: '14 min',
-        cor: Color(0xFF1D9E75),
-        observacao: '',
-      ),
-      _EntradaHistorico(
-        titulo: 'Casa → IFS',
-        subtitulo: 'Ontem, 07:55',
-        duracao: '48 min',
-        cor: Color(0xFFF57C00),
-        observacao: 'acima do normal',
-      ),
-      _EntradaHistorico(
-        titulo: 'IFS → Trabalho',
-        subtitulo: 'Ontem, 13:20',
-        duracao: '12 min',
-        cor: Color(0xFF1D9E75),
-        observacao: '',
-      ),
-      _EntradaHistorico(
-        titulo: 'Casa → Shopping Jardins',
-        subtitulo: '27/03, 18:00',
-        duracao: '22 min',
-        cor: Color(0xFF1D9E75),
-        observacao: '',
-      ),
-    ];
-
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      itemCount: entradas.length,
+      itemCount: BancoMock.historico.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) => _CartaoHistorico(entrada: entradas[index]),
+      itemBuilder: (context, index) => _CartaoHistorico(entrada: BancoMock.historico[index]),
     );
   }
 }
 
-class _EntradaHistorico {
-  final String titulo;
-  final String subtitulo;
-  final String duracao;
-  final Color cor;
-  final String observacao;
-
-  const _EntradaHistorico({
-    required this.titulo,
-    required this.subtitulo,
-    required this.duracao,
-    required this.cor,
-    required this.observacao,
-  });
-}
-
 class _CartaoHistorico extends StatelessWidget {
-  final _EntradaHistorico entrada;
+  final EntradaHistorico entrada;
 
   const _CartaoHistorico({required this.entrada});
 

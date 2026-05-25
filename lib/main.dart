@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import 'features/home/home_screen.dart';
-import 'auth/login_screen.dart';
-import 'auth/register_screen.dart';
-import 'auth/forgot_password_screen.dart';
-import 'package:movecity/app_routes.dart';
+import 'app_routes.dart';
 
 void main() => runApp(const MyApp());
 

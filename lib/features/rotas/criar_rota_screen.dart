@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/widgets/barra_navegacao.dart';
 
 class CriarRotaScreen extends StatefulWidget {
   const CriarRotaScreen({super.key});
@@ -35,7 +36,7 @@ class _CriarRotaScreenState extends State<CriarRotaScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F3F2),
-      bottomNavigationBar: _buildBarraNavegacao(),
+      bottomNavigationBar: const BarraNavegacao(indiceSelecionado: 2),
       body: Column(
         children: [
           _buildCabecalho(context),
@@ -90,11 +91,7 @@ class _CriarRotaScreenState extends State<CriarRotaScreen> {
                       ),
                       child: const Text(
                         'Criar rota',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
@@ -194,9 +191,7 @@ class _CriarRotaScreenState extends State<CriarRotaScreen> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: _transporteSelecionado == opcao
-                          ? Colors.white
-                          : Colors.grey,
+                      color: _transporteSelecionado == opcao ? Colors.white : Colors.grey,
                     ),
                   ),
                 ),
@@ -204,23 +199,6 @@ class _CriarRotaScreenState extends State<CriarRotaScreen> {
             ),
         ],
       ),
-    );
-  }
-
-  Widget _buildBarraNavegacao() {
-    return BottomNavigationBar(
-      currentIndex: 2,
-      selectedItemColor: const Color(0xFF1D9E75),
-      unselectedItemColor: Colors.grey,
-      selectedFontSize: 10,
-      unselectedFontSize: 10,
-      type: BottomNavigationBarType.fixed,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Início'),
-        BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline), label: 'Registrar'),
-        BottomNavigationBarItem(icon: Icon(Icons.list_outlined), label: 'Rotas'),
-        BottomNavigationBarItem(icon: Icon(Icons.history_outlined), label: 'Histórico'),
-      ],
     );
   }
 }

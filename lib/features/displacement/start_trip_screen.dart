@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/widgets/barra_navegacao.dart';
 
 class StartTripScreen extends StatefulWidget {
   const StartTripScreen({super.key});
@@ -8,59 +9,55 @@ class StartTripScreen extends StatefulWidget {
 }
 
 class _StartTripScreenState extends State<StartTripScreen> {
-  static const Color _primaryGreen = Color(0xFF1D9E75);
-  static const Color _background = Color(0xFFF3F3F2);
-  static const Color _lightRouteCard = Color(0xFFEAF5E2);
+  static const Color _verde = Color(0xFF1D9E75);
+  static const Color _fundo = Color(0xFFF3F3F2);
+  static const Color _fundoCartaoRota = Color(0xFFEAF5E2);
 
-  final TextEditingController _observationController = TextEditingController();
-  final List<String> _transportOptions = const [
-    'Ônibus',
-    'Carro',
-    'A pé',
-    'Moto',
-    'Bicicleta',
+  final TextEditingController _observacaoController = TextEditingController();
+  final List<String> _opcoesTransporte = const [
+    'Ônibus', 'Carro', 'A pé', 'Moto', 'Bicicleta',
   ];
 
-  TimeOfDay _departureTime = TimeOfDay.now();
-  String _selectedTransport = 'Ônibus';
+  TimeOfDay _horarioSaida = TimeOfDay.now();
+  String _transporteSelecionado = 'Ônibus';
 
   @override
   void dispose() {
-    _observationController.dispose();
+    _observacaoController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _background,
-      bottomNavigationBar: _buildBottomNavigation(),
+      backgroundColor: _fundo,
+      bottomNavigationBar: const BarraNavegacao(indiceSelecionado: 1),
       body: SafeArea(
         top: false,
         child: Column(
           children: [
-            _buildHeader(context),
+            _buildCabecalho(context),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(14, 14, 14, 32),
                 children: [
-                  _buildStepper(),
+                  _buildIndicadorPassos(),
                   const SizedBox(height: 14),
-                  _buildSelectedRouteCard(),
+                  _buildCartaoRotaSelecionada(),
                   const SizedBox(height: 18),
-                  _buildSectionLabel('Horário de saída'),
+                  _buildLabel('Horário de saída'),
                   const SizedBox(height: 6),
-                  _buildDepartureTimeField(context),
+                  _buildCampoHorario(context),
                   const SizedBox(height: 18),
-                  _buildSectionLabel('Meio de transporte'),
+                  _buildLabel('Meio de transporte'),
                   const SizedBox(height: 8),
-                  _buildTransportSelector(),
+                  _buildSeletorTransporte(),
                   const SizedBox(height: 16),
-                  _buildSectionLabel('Observação (opcional)'),
+                  _buildLabel('Observação (opcional)'),
                   const SizedBox(height: 7),
-                  _buildObservationField(),
+                  _buildCampoObservacao(),
                   const SizedBox(height: 20),
-                  _buildConfirmButton(),
+                  _buildBotaoConfirmar(),
                   const SizedBox(height: 12),
                   const Text(
                     'Você registrará a chegada quando chegar ao destino.',
@@ -76,23 +73,17 @@ class _StartTripScreenState extends State<StartTripScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildCabecalho(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: _primaryGreen,
-      padding: EdgeInsets.fromLTRB(
-        4,
-        MediaQuery.of(context).padding.top + 8,
-        20,
-        24,
-      ),
+      color: _verde,
+      padding: EdgeInsets.fromLTRB(4, MediaQuery.of(context).padding.top + 8, 20, 24),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           IconButton(
             onPressed: () => Navigator.maybePop(context),
             icon: const Icon(Icons.chevron_left, color: Colors.white, size: 26),
-            tooltip: 'Voltar',
           ),
           const SizedBox(width: 4),
           const Expanded(
@@ -103,11 +94,7 @@ class _StartTripScreenState extends State<StartTripScreen> {
                 children: [
                   Text(
                     'Iniciar deslocamento',
-                    style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
+                    style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                   SizedBox(height: 8),
                   Text(
@@ -123,44 +110,40 @@ class _StartTripScreenState extends State<StartTripScreen> {
     );
   }
 
-  Widget _buildStepper() {
+  Widget _buildIndicadorPassos() {
     return const Padding(
       padding: EdgeInsets.symmetric(horizontal: 28),
       child: Row(
         children: [
-          _StepIndicator(number: '✓', label: 'Rota', state: _StepState.done),
-          Expanded(child: _StepDivider(isActive: true)),
-          _StepIndicator(number: '2', label: 'Saída', state: _StepState.active),
-          Expanded(child: _StepDivider()),
-          _StepIndicator(number: '3', label: 'Chegada'),
+          _IndicadorPasso(numero: '✓', label: 'Rota', estado: _EstadoPasso.concluido),
+          Expanded(child: _DivisorPasso(ativo: true)),
+          _IndicadorPasso(numero: '2', label: 'Saída', estado: _EstadoPasso.ativo),
+          Expanded(child: _DivisorPasso()),
+          _IndicadorPasso(numero: '3', label: 'Chegada'),
         ],
       ),
     );
   }
 
-  Widget _buildSelectedRouteCard() {
+  Widget _buildCartaoRotaSelecionada() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: _lightRouteCard,
+        color: _fundoCartaoRota,
         borderRadius: BorderRadius.circular(11),
         border: Border.all(color: const Color(0xFFA3CC59), width: 1.2),
       ),
       child: const Row(
         children: [
-          CircleAvatar(radius: 7, backgroundColor: _primaryGreen),
+          CircleAvatar(radius: 7, backgroundColor: _verde),
           SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Casa ➜ IFS',
-                  style: TextStyle(
-                    color: Color(0xFF13694F),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  'Casa → IFS',
+                  style: TextStyle(color: Color(0xFF13694F), fontSize: 16, fontWeight: FontWeight.w800),
                 ),
                 SizedBox(height: 4),
                 Text(
@@ -175,14 +158,14 @@ class _StartTripScreenState extends State<StartTripScreen> {
     );
   }
 
-  Widget _buildDepartureTimeField(BuildContext context) {
-    final formattedTime =
-        '${_departureTime.hour.toString().padLeft(2, '0')}:${_departureTime.minute.toString().padLeft(2, '0')}';
+  Widget _buildCampoHorario(BuildContext context) {
+    final horarioFormatado =
+        '${_horarioSaida.hour.toString().padLeft(2, '0')}:${_horarioSaida.minute.toString().padLeft(2, '0')}';
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => _pickDepartureTime(context),
+        onTap: () => _selecionarHorario(context),
         borderRadius: BorderRadius.circular(11),
         child: Ink(
           width: double.infinity,
@@ -190,7 +173,7 @@ class _StartTripScreenState extends State<StartTripScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(11),
-            border: Border.all(color: _primaryGreen, width: 1.7),
+            border: Border.all(color: _verde, width: 1.7),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.06),
@@ -202,9 +185,9 @@ class _StartTripScreenState extends State<StartTripScreen> {
           child: Column(
             children: [
               Text(
-                formattedTime,
+                horarioFormatado,
                 style: const TextStyle(
-                  color: _primaryGreen,
+                  color: _verde,
                   fontSize: 36,
                   fontWeight: FontWeight.w900,
                   height: 1,
@@ -222,17 +205,17 @@ class _StartTripScreenState extends State<StartTripScreen> {
     );
   }
 
-  Future<void> _pickDepartureTime(BuildContext context) async {
-    final pickedTime = await showTimePicker(
+  Future<void> _selecionarHorario(BuildContext context) async {
+    final horarioEscolhido = await showTimePicker(
       context: context,
-      initialTime: _departureTime,
+      initialTime: _horarioSaida,
       builder: (context, child) {
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
           child: Theme(
             data: Theme.of(context).copyWith(
               colorScheme: const ColorScheme.light(
-                primary: _primaryGreen,
+                primary: _verde,
                 onPrimary: Colors.white,
                 onSurface: Color(0xFF202221),
               ),
@@ -243,51 +226,38 @@ class _StartTripScreenState extends State<StartTripScreen> {
       },
     );
 
-    if (pickedTime == null) {
-      return;
-    }
-
-    setState(() {
-      _departureTime = pickedTime;
-    });
+    if (horarioEscolhido == null) return;
+    setState(() => _horarioSaida = horarioEscolhido);
   }
 
-  Widget _buildTransportSelector() {
+  Widget _buildSeletorTransporte() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          for (final transport in _transportOptions)
+          for (final transporte in _opcoesTransporte)
             Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: ChoiceChip(
-                label: Text(transport),
-                selected: _selectedTransport == transport,
-                onSelected: (_) {
-                  setState(() {
-                    _selectedTransport = transport;
-                  });
-                },
-                labelStyle: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: _selectedTransport == transport
-                      ? Colors.white
-                      : const Color(0xFF777777),
+              child: GestureDetector(
+                onTap: () => setState(() => _transporteSelecionado = transporte),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _transporteSelecionado == transporte ? _verde : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: _transporteSelecionado == transporte ? _verde : const Color(0xFFE0E0DD),
+                    ),
+                  ),
+                  child: Text(
+                    transporte,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: _transporteSelecionado == transporte ? Colors.white : const Color(0xFF777777),
+                    ),
+                  ),
                 ),
-                selectedColor: _primaryGreen,
-                backgroundColor: Colors.white,
-                showCheckmark: false,
-                side: BorderSide(
-                  color: _selectedTransport == transport
-                      ? _primaryGreen
-                      : const Color(0xFFE0E0DD),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                visualDensity: VisualDensity.compact,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ),
         ],
@@ -295,9 +265,9 @@ class _StartTripScreenState extends State<StartTripScreen> {
     );
   }
 
-  Widget _buildObservationField() {
+  Widget _buildCampoObservacao() {
     return TextField(
-      controller: _observationController,
+      controller: _observacaoController,
       minLines: 1,
       maxLines: 3,
       decoration: InputDecoration(
@@ -305,36 +275,31 @@ class _StartTripScreenState extends State<StartTripScreen> {
         hintStyle: const TextStyle(color: Color(0xFFBBBBBB), fontSize: 14),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 12,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: Color(0xFFDCDCDC)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: _primaryGreen, width: 1.4),
+          borderSide: const BorderSide(color: _verde, width: 1.4),
         ),
       ),
     );
   }
 
-  Widget _buildConfirmButton() {
+  Widget _buildBotaoConfirmar() {
     return SizedBox(
       width: double.infinity,
       height: 48,
       child: ElevatedButton(
         onPressed: () {},
         style: ElevatedButton.styleFrom(
-          backgroundColor: _primaryGreen,
+          backgroundColor: _verde,
           foregroundColor: Colors.white,
           elevation: 7,
-          shadowColor: _primaryGreen.withValues(alpha: 0.28),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+          shadowColor: _verde.withValues(alpha: 0.28),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
         child: const Text(
           'Confirmar saída',
@@ -344,63 +309,33 @@ class _StartTripScreenState extends State<StartTripScreen> {
     );
   }
 
-  Widget _buildBottomNavigation() {
-    return BottomNavigationBar(
-      currentIndex: 1,
-      selectedItemColor: _primaryGreen,
-      unselectedItemColor: Colors.grey,
-      selectedFontSize: 10,
-      unselectedFontSize: 10,
-      type: BottomNavigationBarType.fixed,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          label: 'Início',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.add_circle_outline),
-          label: 'Registrar',
-        ),
-        BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'Rotas'),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.history_outlined),
-          label: 'Histórico',
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSectionLabel(String label) {
+  Widget _buildLabel(String texto) {
     return Text(
-      label,
-      style: const TextStyle(
-        color: Color(0xFF777777),
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-      ),
+      texto,
+      style: const TextStyle(color: Color(0xFF777777), fontSize: 13, fontWeight: FontWeight.w600),
     );
   }
 }
 
-enum _StepState { inactive, active, done }
+enum _EstadoPasso { inativo, ativo, concluido }
 
-class _StepIndicator extends StatelessWidget {
-  const _StepIndicator({
-    required this.number,
+class _IndicadorPasso extends StatelessWidget {
+  final String numero;
+  final String label;
+  final _EstadoPasso estado;
+
+  const _IndicadorPasso({
+    required this.numero,
     required this.label,
-    this.state = _StepState.inactive,
+    this.estado = _EstadoPasso.inativo,
   });
 
-  final String number;
-  final String label;
-  final _StepState state;
-
-  static const Color _primaryGreen = Color(0xFF1D9E75);
+  static const Color _verde = Color(0xFF1D9E75);
 
   @override
   Widget build(BuildContext context) {
-    final isActive = state == _StepState.active || state == _StepState.done;
-    final color = isActive ? _primaryGreen : const Color(0xFFCFCFCF);
+    final ativo = estado == _EstadoPasso.ativo || estado == _EstadoPasso.concluido;
+    final cor = ativo ? _verde : const Color(0xFFCFCFCF);
 
     return Column(
       children: [
@@ -408,21 +343,17 @@ class _StepIndicator extends StatelessWidget {
           width: 24,
           height: 24,
           alignment: Alignment.center,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
           child: Text(
-            number,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-            ),
+            numero,
+            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800),
           ),
         ),
         const SizedBox(height: 9),
         Text(
           label,
           style: TextStyle(
-            color: isActive ? _primaryGreen : const Color(0xFF909090),
+            color: ativo ? _verde : const Color(0xFF909090),
             fontSize: 10,
             fontWeight: FontWeight.w600,
           ),
@@ -432,17 +363,17 @@ class _StepIndicator extends StatelessWidget {
   }
 }
 
-class _StepDivider extends StatelessWidget {
-  const _StepDivider({this.isActive = false});
+class _DivisorPasso extends StatelessWidget {
+  final bool ativo;
 
-  final bool isActive;
+  const _DivisorPasso({this.ativo = false});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 2,
       margin: const EdgeInsets.only(left: 4, right: 4, bottom: 24),
-      color: isActive ? const Color(0xFF1D9E75) : const Color(0xFFDCDCDC),
+      color: ativo ? const Color(0xFF1D9E75) : const Color(0xFFDCDCDC),
     );
   }
 }

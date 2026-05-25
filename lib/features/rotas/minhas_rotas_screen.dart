@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'rotas_mock_dados.dart';
+import '../../core/mock/banco_mock.dart';
+import '../../core/widgets/barra_navegacao.dart';
 import 'editar_rota_screen.dart';
 import 'criar_rota_screen.dart';
 
@@ -21,9 +22,9 @@ class _MinhasRotasScreenState extends State<MinhasRotasScreen> {
   }
 
   List<DadosRota> get _rotasFiltradas {
-    if (_termoBusca.trim().isEmpty) return RotasMockDados.rotas;
+    if (_termoBusca.trim().isEmpty) return BancoMock.rotas;
     final termo = _termoBusca.toLowerCase();
-    return RotasMockDados.rotas
+    return BancoMock.rotas
         .where((r) => r.nome.toLowerCase().contains(termo))
         .toList();
   }
@@ -34,7 +35,7 @@ class _MinhasRotasScreenState extends State<MinhasRotasScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F3F2),
-      bottomNavigationBar: _buildBarraNavegacao(),
+      bottomNavigationBar: const BarraNavegacao(indiceSelecionado: 2),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -102,15 +103,11 @@ class _MinhasRotasScreenState extends State<MinhasRotasScreen> {
         children: [
           const Text(
             'Minhas rotas',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 4),
           Text(
-            '${RotasMockDados.rotas.length} rotas cadastradas',
+            '${BancoMock.rotas.length} rotas cadastradas',
             style: const TextStyle(fontSize: 13, color: Color(0xFFC7F0DF)),
           ),
         ],
@@ -176,10 +173,7 @@ class _MinhasRotasScreenState extends State<MinhasRotasScreen> {
                 children: [
                   Text(
                     rota.nome,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -220,23 +214,6 @@ class _MinhasRotasScreenState extends State<MinhasRotasScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildBarraNavegacao() {
-    return BottomNavigationBar(
-      currentIndex: 2,
-      selectedItemColor: const Color(0xFF1D9E75),
-      unselectedItemColor: Colors.grey,
-      selectedFontSize: 10,
-      unselectedFontSize: 10,
-      type: BottomNavigationBarType.fixed,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Início'),
-        BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline), label: 'Registrar'),
-        BottomNavigationBarItem(icon: Icon(Icons.list_outlined), label: 'Rotas'),
-        BottomNavigationBarItem(icon: Icon(Icons.history_outlined), label: 'Histórico'),
-      ],
     );
   }
 }

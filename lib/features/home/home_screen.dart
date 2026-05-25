@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'home_dados.dart';
-import 'home_mock_dados.dart';
+import '../../core/mock/banco_mock.dart';
+import '../../core/widgets/barra_navegacao.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   // Para testar, troque por:
-  // HomeMockDados.novoUsuario
-  // HomeMockDados.usuarioNormal
-  // HomeMockDados.usuarioComSugestao
-  static final _dados = HomeMockDados.novoUsuario;
-
+  // BancoMock.novoUsuario
+  // BancoMock.usuarioNormal
+  // BancoMock.usuarioComSugestao
+  static final _dados = BancoMock.novoUsuario;
 
   String get _saudacao {
     final hora = DateTime.now().hour;
@@ -32,7 +31,7 @@ class HomeScreen extends StatelessWidget {
     return '${diasSemana[agora.weekday % 7]}, ${agora.day} de ${meses[agora.month - 1]}';
   }
 
-  bool get _ehNovoUsuario => _dados.rotas.isEmpty;
+  bool get _ehNovoUsuario => BancoMock.rotas.isEmpty;
   bool get _temSugestao => _dados.sugestao != null;
   String get _tituloRotas =>
       _dados.deslocamentosHoje > 0 ? 'Rotas recentes' : 'Suas rotas';
@@ -41,7 +40,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F3F2),
-      bottomNavigationBar: _buildBarraNavegacao(),
+      bottomNavigationBar: const BarraNavegacao(indiceSelecionado: 0),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,26 +55,6 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
-
-  // ─── Barra de navegação
-
-  Widget _buildBarraNavegacao() {
-    return BottomNavigationBar(
-      currentIndex: 0,
-      selectedItemColor: const Color(0xFF1D9E75),
-      unselectedItemColor: Colors.grey,
-      selectedFontSize: 10,
-      unselectedFontSize: 10,
-      type: BottomNavigationBarType.fixed,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Início'),
-        BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline), label: 'Registrar'),
-        BottomNavigationBarItem(icon: Icon(Icons.list_outlined), label: 'Rotas'),
-        BottomNavigationBarItem(icon: Icon(Icons.history_outlined), label: 'Histórico'),
-      ],
-    );
-  }
-
 
   Widget _buildCabecalho() {
     if (_ehNovoUsuario) {
@@ -227,7 +206,6 @@ class HomeScreen extends StatelessWidget {
     ];
   }
 
-
   List<Widget> _conteudoComSugestao() {
     final sugestao = _dados.sugestao!;
     final alerta = _dados.alertaTransito;
@@ -281,7 +259,6 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
-
       if (alerta != null) ...[
         const SizedBox(height: 12),
         Container(
@@ -310,7 +287,6 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ],
-
       const SizedBox(height: 20),
       ..._buildSecaoRotas(),
       const SizedBox(height: 20),
@@ -367,6 +343,7 @@ class HomeScreen extends StatelessWidget {
   }
 
   List<Widget> _buildSecaoRotas() {
+    final rotas = BancoMock.rotas;
     return [
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -381,16 +358,14 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
-      for (int i = 0; i < _dados.rotas.length; i++) ...[
+      for (int i = 0; i < rotas.length; i++) ...[
         if (i > 0) const SizedBox(height: 8),
-        _buildCartaoRota(_dados.rotas[i]),
+        _buildCartaoRota(rotas[i]),
       ],
     ];
   }
 
-  Widget _buildCartaoRota(Rota rota) {
-    final cor = rota.isPrincipal ? const Color(0xFF1D9E75) : const Color(0xFFBA7517);
-
+  Widget _buildCartaoRota(DadosRota rota) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 0),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -401,7 +376,7 @@ class HomeScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(width: 14, height: 14, decoration: BoxDecoration(color: cor, shape: BoxShape.circle)),
+          Container(width: 14, height: 14, decoration: BoxDecoration(color: rota.cor, shape: BoxShape.circle)),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -409,7 +384,7 @@ class HomeScreen extends StatelessWidget {
               children: [
                 Text(rota.nome, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
-                Text(rota.ultimaVez, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                Text(rota.ultimoUso, style: const TextStyle(fontSize: 11, color: Colors.grey)),
               ],
             ),
           ),
