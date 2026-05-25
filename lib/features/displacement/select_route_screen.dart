@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app_routes.dart';
 import '../../core/mock/banco_mock.dart';
 import '../../core/widgets/barra_navegacao.dart';
 
@@ -89,7 +90,7 @@ class _SelectRouteScreenState extends State<SelectRouteScreen> {
           width: double.infinity,
           height: 54,
           child: ElevatedButton(
-            onPressed: () {},
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.iniciarDeslocamento),
             style: ElevatedButton.styleFrom(
               backgroundColor: _verde,
               foregroundColor: Colors.white,

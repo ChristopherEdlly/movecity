@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app_routes.dart';
 import '../../core/widgets/barra_navegacao.dart';
 
 class StartTripScreen extends StatefulWidget {
@@ -293,7 +294,7 @@ class _StartTripScreenState extends State<StartTripScreen> {
       width: double.infinity,
       height: 48,
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: () => Navigator.pushNamed(context, AppRoutes.emTransito),
         style: ElevatedButton.styleFrom(
           backgroundColor: _verde,
           foregroundColor: Colors.white,
