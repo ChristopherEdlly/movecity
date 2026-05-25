@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../core/mock/banco_mock.dart';
 import '../../core/widgets/barra_navegacao.dart';
+import '../displacement/select_route_screen.dart';
+import '../rotas/criar_rota_screen.dart';
+import '../rotas/editar_rota_screen.dart';
+import '../rotas/minhas_rotas_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -47,9 +51,9 @@ class HomeScreen extends StatelessWidget {
           children: [
             _buildCabecalho(),
             const SizedBox(height: 12),
-            if (_ehNovoUsuario) ..._conteudoNovoUsuario(),
-            if (!_ehNovoUsuario && _temSugestao) ..._conteudoComSugestao(),
-            if (!_ehNovoUsuario && !_temSugestao) ..._conteudoNormal(),
+            if (_ehNovoUsuario) ..._conteudoNovoUsuario(context),
+            if (!_ehNovoUsuario && _temSugestao) ..._conteudoComSugestao(context),
+            if (!_ehNovoUsuario && !_temSugestao) ..._conteudoNormal(context),
           ],
         ),
       ),
@@ -142,7 +146,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  List<Widget> _conteudoNormal() {
+  List<Widget> _conteudoNormal(BuildContext context) {
     return [
       Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -150,7 +154,7 @@ class HomeScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.07), blurRadius: 10, offset: const Offset(0, 2))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.07), blurRadius: 10, offset: const Offset(0, 2))],
         ),
         child: Row(
           children: [
@@ -163,30 +167,37 @@ class HomeScreen extends StatelessWidget {
                   const Text('Toque para registrar sua saída', style: TextStyle(fontSize: 12, color: Colors.grey)),
                   const SizedBox(height: 12),
                   ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const SelectRouteScreen()));
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1D9E75),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: const Text('Selecionar rota  →', style: TextStyle(fontSize: 11, color: Colors.white)),
+                    child: const Text('Selecionar rota  →', style: TextStyle(fontSize: 12, color: Colors.white)),
                   ),
                 ],
               ),
             ),
-            Container(
-              width: 48,
-              height: 48,
-              decoration: const BoxDecoration(color: Color(0xFFE9F3DE), shape: BoxShape.circle),
-              child: const Icon(Icons.play_arrow, color: Color(0xFF1D9E75), size: 22),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const SelectRouteScreen()));
+              },
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(color: Color(0xFFE9F3DE), shape: BoxShape.circle),
+                child: const Icon(Icons.play_arrow, color: Color(0xFF1D9E75), size: 22),
+              ),
             ),
           ],
         ),
       ),
       const SizedBox(height: 20),
-      ..._buildSecaoRotas(),
+      ..._buildSecaoRotas(context),
       const SizedBox(height: 20),
       ..._buildGrafico(),
       if (_dados.dica != null) ...[
@@ -206,7 +217,7 @@ class HomeScreen extends StatelessWidget {
     ];
   }
 
-  List<Widget> _conteudoComSugestao() {
+  List<Widget> _conteudoComSugestao(BuildContext context) {
     final sugestao = _dados.sugestao!;
     final alerta = _dados.alertaTransito;
 
@@ -217,7 +228,7 @@ class HomeScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.07), blurRadius: 10, offset: const Offset(0, 2))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.07), blurRadius: 10, offset: const Offset(0, 2))],
         ),
         child: Row(
           children: [
@@ -248,7 +259,9 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const SelectRouteScreen()));
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1D9E75),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -288,14 +301,14 @@ class HomeScreen extends StatelessWidget {
         ),
       ],
       const SizedBox(height: 20),
-      ..._buildSecaoRotas(),
+      ..._buildSecaoRotas(context),
       const SizedBox(height: 20),
       ..._buildGrafico(),
       const SizedBox(height: 24),
     ];
   }
 
-  List<Widget> _conteudoNovoUsuario() {
+  List<Widget> _conteudoNovoUsuario(BuildContext context) {
     return [
       Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -303,7 +316,7 @@ class HomeScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.07), blurRadius: 10, offset: const Offset(0, 2))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.07), blurRadius: 10, offset: const Offset(0, 2))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -318,7 +331,9 @@ class HomeScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const CriarRotaScreen()));
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1D9E75),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -342,7 +357,7 @@ class HomeScreen extends StatelessWidget {
     ];
   }
 
-  List<Widget> _buildSecaoRotas() {
+  List<Widget> _buildSecaoRotas(BuildContext context) {
     final rotas = BancoMock.rotas;
     return [
       Padding(
@@ -352,7 +367,9 @@ class HomeScreen extends StatelessWidget {
           children: [
             Text(_tituloRotas, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
             TextButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const MinhasRotasScreen()));
+              },
               child: const Text('Ver todas →', style: TextStyle(fontSize: 11, color: Color(0xFF1D9E75))),
             ),
           ],
@@ -360,36 +377,41 @@ class HomeScreen extends StatelessWidget {
       ),
       for (int i = 0; i < rotas.length; i++) ...[
         if (i > 0) const SizedBox(height: 8),
-        _buildCartaoRota(rotas[i]),
+        _buildCartaoRota(context, rotas[i]),
       ],
     ];
   }
 
-  Widget _buildCartaoRota(DadosRota rota) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.07), blurRadius: 10, offset: const Offset(0, 2))],
-      ),
-      child: Row(
-        children: [
-          Container(width: 14, height: 14, decoration: BoxDecoration(color: rota.cor, shape: BoxShape.circle)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(rota.nome, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 4),
-                Text(rota.ultimoUso, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-              ],
+  Widget _buildCartaoRota(BuildContext context, DadosRota rota) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => EditarRotaScreen(rota: rota)));
+      },
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.07), blurRadius: 10, offset: const Offset(0, 2))],
+        ),
+        child: Row(
+          children: [
+            Container(width: 14, height: 14, decoration: BoxDecoration(color: rota.cor, shape: BoxShape.circle)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(rota.nome, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Text(rota.ultimoUso, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                ],
+              ),
             ),
-          ),
-          const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
-        ],
+            const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+          ],
+        ),
       ),
     );
   }
@@ -414,7 +436,7 @@ class HomeScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.07), blurRadius: 10, offset: const Offset(0, 2))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.07), blurRadius: 10, offset: const Offset(0, 2))],
         ),
         child: Column(
           children: [
@@ -475,7 +497,7 @@ class HomeScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.07), blurRadius: 10, offset: const Offset(0, 2))],
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.07), blurRadius: 10, offset: const Offset(0, 2))],
           ),
           child: Row(
             children: [
