@@ -30,17 +30,23 @@ class DadosRota {
 
 class EntradaHistorico {
   final String titulo;
-  final String subtitulo;
+  final String data;
+  final String horarioSaida;
+  final String horarioChegada;
+  final String transporte;
   final String duracao;
   final Color cor;
   final String observacao;
 
   const EntradaHistorico({
     required this.titulo,
-    required this.subtitulo,
+    required this.data,
+    required this.horarioSaida,
+    required this.horarioChegada,
+    required this.transporte,
     required this.duracao,
     required this.cor,
-    required this.observacao,
+    this.observacao = '',
   });
 }
 
@@ -93,41 +99,53 @@ class BancoMock {
 
   // ─── Histórico de deslocamentos ────────────────────────────────
 
-  static const List<EntradaHistorico> historico = [
-    EntradaHistorico(
+  static final List<EntradaHistorico> historico = [
+    const EntradaHistorico(
       titulo: 'Casa → IFS',
-      subtitulo: 'Hoje, 07:42',
+      data: 'Hoje',
+      horarioSaida: '07:42',
+      horarioChegada: '08:19',
+      transporte: 'Ônibus',
       duracao: '37 min',
       cor: Color(0xFF1D9E75),
-      observacao: '',
+      observacao: 'Ônibus atrasado ~5 min na parada',
     ),
-    EntradaHistorico(
+    const EntradaHistorico(
       titulo: 'IFS → Trabalho',
-      subtitulo: 'Hoje, 13:10',
+      data: 'Hoje',
+      horarioSaida: '13:10',
+      horarioChegada: '13:24',
+      transporte: 'A pé',
       duracao: '14 min',
       cor: Color(0xFF1D9E75),
-      observacao: '',
     ),
-    EntradaHistorico(
+    const EntradaHistorico(
       titulo: 'Casa → IFS',
-      subtitulo: 'Ontem, 07:55',
+      data: 'Ontem',
+      horarioSaida: '07:55',
+      horarioChegada: '08:43',
+      transporte: 'Ônibus',
       duracao: '48 min',
       cor: Color(0xFFF57C00),
-      observacao: 'acima do normal',
+      observacao: 'Trânsito pesado na Av. Tancredo',
     ),
-    EntradaHistorico(
+    const EntradaHistorico(
       titulo: 'IFS → Trabalho',
-      subtitulo: 'Ontem, 13:20',
+      data: 'Ontem',
+      horarioSaida: '13:20',
+      horarioChegada: '13:32',
+      transporte: 'A pé',
       duracao: '12 min',
       cor: Color(0xFF1D9E75),
-      observacao: '',
     ),
-    EntradaHistorico(
+    const EntradaHistorico(
       titulo: 'Casa → Shopping Jardins',
-      subtitulo: '27/03, 18:00',
+      data: '27/03',
+      horarioSaida: '18:00',
+      horarioChegada: '18:22',
+      transporte: 'Carro',
       duracao: '22 min',
       cor: Color(0xFF1D9E75),
-      observacao: '',
     ),
   ];
 

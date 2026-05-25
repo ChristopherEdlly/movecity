@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/mock/banco_mock.dart';
 import '../../core/widgets/barra_navegacao.dart';
+import 'editar_deslocamento_screen.dart';
 
 class HistoricoScreen extends StatelessWidget {
   const HistoricoScreen({super.key});
@@ -160,7 +161,7 @@ class _ListaHistorico extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       itemCount: BancoMock.historico.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, index) => _CartaoHistorico(entrada: BancoMock.historico[index]),
     );
   }
@@ -173,53 +174,63 @@ class _CartaoHistorico extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, 6)),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 12,
-            height: 12,
-            margin: const EdgeInsets.only(top: 6),
-            decoration: BoxDecoration(color: entrada.cor, shape: BoxShape.circle),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => EditarDeslocamentoScreen(entrada: entrada),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  entrada.titulo,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  entrada.subtitulo,
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                ),
-                if (entrada.observacao.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    entrada.observacao,
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
-                  ),
-                ],
-              ],
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: const [
+            BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, 6)),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              margin: const EdgeInsets.only(top: 6),
+              decoration: BoxDecoration(color: entrada.cor, shape: BoxShape.circle),
             ),
-          ),
-          Text(
-            entrada.duracao,
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: entrada.cor),
-          ),
-        ],
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entrada.titulo,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${entrada.data} · ${entrada.horarioSaida}',
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  ),
+                  if (entrada.observacao.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      entrada.observacao,
+                      style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Text(
+              entrada.duracao,
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: entrada.cor),
+            ),
+          ],
+        ),
       ),
     );
   }
