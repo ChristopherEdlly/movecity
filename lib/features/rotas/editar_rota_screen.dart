@@ -4,7 +4,7 @@ import '../../core/mock/banco_mock.dart';
 import '../../core/widgets/barra_navegacao.dart';
 
 class EditarRotaScreen extends StatefulWidget {
-  final DadosRota rota;
+  final Rota rota;
 
   const EditarRotaScreen({super.key, required this.rota});
 
@@ -79,7 +79,7 @@ class _EditarRotaScreenState extends State<EditarRotaScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    '${widget.rota.nome} · ${widget.rota.usos} deslocamentos',
+                    '${widget.rota.nome} · ${BancoMock.usosDaRota(widget.rota.id)} deslocamentos',
                     style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                   ),
                 ),
@@ -150,7 +150,7 @@ class _EditarRotaScreenState extends State<EditarRotaScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      '${widget.rota.usos} usos registrados',
+                      '${BancoMock.usosDaRota(widget.rota.id)} usos registrados',
                       style: const TextStyle(
                         fontSize: 12,
                         color: Color(0xFF3B6D11),
