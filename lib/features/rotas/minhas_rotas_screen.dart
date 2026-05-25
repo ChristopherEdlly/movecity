@@ -21,7 +21,7 @@ class _MinhasRotasScreenState extends State<MinhasRotasScreen> {
     super.dispose();
   }
 
-  List<DadosRota> get _rotasFiltradas {
+  List<Rota> get _rotasFiltradas {
     if (_termoBusca.trim().isEmpty) return BancoMock.rotas;
     final termo = _termoBusca.toLowerCase();
     return BancoMock.rotas
@@ -50,7 +50,7 @@ class _MinhasRotasScreenState extends State<MinhasRotasScreen> {
             child: ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
               itemCount: rotas.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
                 return _buildCartaoRota(rotas[index]);
               },
@@ -138,7 +138,7 @@ class _MinhasRotasScreenState extends State<MinhasRotasScreen> {
     );
   }
 
-  Widget _buildCartaoRota(DadosRota rota) {
+  Widget _buildCartaoRota(Rota rota) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -153,7 +153,7 @@ class _MinhasRotasScreenState extends State<MinhasRotasScreen> {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -194,7 +194,7 @@ class _MinhasRotasScreenState extends State<MinhasRotasScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    '${rota.usos}×',
+                    '${BancoMock.usosDaRota(rota.id)}×',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -204,7 +204,7 @@ class _MinhasRotasScreenState extends State<MinhasRotasScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  rota.ultimoUso,
+                  BancoMock.ultimoUsoDaRota(rota.id),
                   style: const TextStyle(fontSize: 11, color: Colors.grey),
                 ),
               ],

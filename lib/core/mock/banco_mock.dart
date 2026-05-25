@@ -1,192 +1,278 @@
 import 'package:flutter/material.dart';
-import '../../features/home/home_dados.dart';
 
 // Simulação do banco de dados enquanto o backend não está integrado.
 // Todas as telas buscam dados daqui.
+//
+// DER:  Usuario 1 ──── N  Rota 1 ──── N  Deslocamento
 
-class DadosRota {
+class Usuario {
+  final int id;
+  final String nome;
+  final String email;
+  final String senha;
+
+  const Usuario({
+    required this.id,
+    required this.nome,
+    required this.email,
+    required this.senha,
+  });
+}
+
+class Rota {
+  final int id;
+  final int usuarioId;
   final String nome;
   final String origem;
   final String destino;
   final int tempoEstimadoMin;
   final String transporte;
-  final String? observacoes;
-  final int usos;
-  final String ultimoUso;
   final Color cor;
+  final String? observacoes;
 
-  DadosRota({
+  const Rota({
+    required this.id,
+    required this.usuarioId,
     required this.nome,
     required this.origem,
     required this.destino,
     required this.tempoEstimadoMin,
     required this.transporte,
-    required this.usos,
-    required this.ultimoUso,
     required this.cor,
     this.observacoes,
   });
 }
 
-class EntradaHistorico {
-  final String titulo;
+class Deslocamento {
+  final int id;
+  final int rotaId;
   final String data;
   final String horarioSaida;
   final String horarioChegada;
   final String transporte;
-  final String duracao;
-  final Color cor;
   final String observacao;
 
-  const EntradaHistorico({
-    required this.titulo,
+  const Deslocamento({
+    required this.id,
+    required this.rotaId,
     required this.data,
     required this.horarioSaida,
     required this.horarioChegada,
     required this.transporte,
-    required this.duracao,
-    required this.cor,
     this.observacao = '',
   });
 }
 
+class SugestaoRota {
+  final String rota;
+  final String transporte;
+  final String tempoEstimado;
+  final String saidaIdeal;
+
+  SugestaoRota({
+    required this.rota,
+    required this.transporte,
+    required this.tempoEstimado,
+    required this.saidaIdeal,
+  });
+}
+
+class AlertaTransito {
+  final String titulo;
+  final String mensagem;
+
+  AlertaTransito({required this.titulo, required this.mensagem});
+}
+
 class BancoMock {
+  // ─── Usuário logado ────────────────────────────────────────────
+
+  static const Usuario usuarioLogado = Usuario(
+    id: 1,
+    nome: 'Chris',
+    email: 'chris@email.com',
+    senha: '123456',
+  );
+
   // ─── Rotas cadastradas ─────────────────────────────────────────
 
-  static final List<DadosRota> rotas = [
-    DadosRota(
+  static final List<Rota> rotas = [
+    const Rota(
+      id: 1,
+      usuarioId: 1,
       nome: 'Casa → IFS',
       origem: 'Rua das Flores, 10 — Aracaju',
       destino: 'IFS Aracaju — Av. Eng. Gentil Tavares',
       tempoEstimadoMin: 35,
       transporte: 'Ônibus',
-      usos: 23,
-      ultimoUso: 'Hoje',
-      cor: const Color(0xFF1D9E75),
+      cor: Color(0xFF1D9E75),
       observacoes: 'Ponto de ônibus na esquina',
     ),
-    DadosRota(
+    const Rota(
+      id: 2,
+      usuarioId: 1,
       nome: 'IFS → Trabalho',
       origem: 'IFS Aracaju — Av. Eng. Gentil Tavares',
       destino: 'Centro Empresarial — Aracaju',
       tempoEstimadoMin: 12,
       transporte: 'A pé',
-      usos: 18,
-      ultimoUso: 'Ontem',
-      cor: const Color(0xFFBA7517),
+      cor: Color(0xFFBA7517),
     ),
-    DadosRota(
+    const Rota(
+      id: 3,
+      usuarioId: 1,
       nome: 'Casa → Shopping Jardins',
       origem: 'Rua das Flores, 10 — Aracaju',
       destino: 'Shopping Jardins — Aracaju',
       tempoEstimadoMin: 20,
       transporte: 'Carro',
-      usos: 7,
-      ultimoUso: 'Dom',
-      cor: Colors.grey,
+      cor: Color(0xFF9E9E9E),
     ),
-    DadosRota(
+    const Rota(
+      id: 4,
+      usuarioId: 1,
       nome: 'Trabalho → Academia',
       origem: 'Centro Empresarial — Aracaju',
       destino: 'Academia SmartFit — Aracaju',
       tempoEstimadoMin: 8,
       transporte: 'A pé',
-      usos: 12,
-      ultimoUso: 'Sex',
-      cor: const Color(0xFF1D9E75),
+      cor: Color(0xFF1D9E75),
     ),
   ];
 
-  // ─── Histórico de deslocamentos ────────────────────────────────
+  // ─── Deslocamentos registrados ─────────────────────────────────
 
-  static final List<EntradaHistorico> historico = [
-    const EntradaHistorico(
-      titulo: 'Casa → IFS',
+  static final List<Deslocamento> deslocamentos = [
+    const Deslocamento(
+      id: 1,
+      rotaId: 1,
       data: 'Hoje',
       horarioSaida: '07:42',
       horarioChegada: '08:19',
       transporte: 'Ônibus',
-      duracao: '37 min',
-      cor: Color(0xFF1D9E75),
       observacao: 'Ônibus atrasado ~5 min na parada',
     ),
-    const EntradaHistorico(
-      titulo: 'IFS → Trabalho',
+    const Deslocamento(
+      id: 2,
+      rotaId: 2,
       data: 'Hoje',
       horarioSaida: '13:10',
       horarioChegada: '13:24',
       transporte: 'A pé',
-      duracao: '14 min',
-      cor: Color(0xFF1D9E75),
     ),
-    const EntradaHistorico(
-      titulo: 'Casa → IFS',
+    const Deslocamento(
+      id: 3,
+      rotaId: 1,
       data: 'Ontem',
       horarioSaida: '07:55',
       horarioChegada: '08:43',
       transporte: 'Ônibus',
-      duracao: '48 min',
-      cor: Color(0xFFF57C00),
       observacao: 'Trânsito pesado na Av. Tancredo',
     ),
-    const EntradaHistorico(
-      titulo: 'IFS → Trabalho',
+    const Deslocamento(
+      id: 4,
+      rotaId: 2,
       data: 'Ontem',
       horarioSaida: '13:20',
       horarioChegada: '13:32',
       transporte: 'A pé',
-      duracao: '12 min',
-      cor: Color(0xFF1D9E75),
     ),
-    const EntradaHistorico(
-      titulo: 'Casa → Shopping Jardins',
+    const Deslocamento(
+      id: 5,
+      rotaId: 3,
       data: '27/03',
       horarioSaida: '18:00',
       horarioChegada: '18:22',
       transporte: 'Carro',
-      duracao: '22 min',
-      cor: Color(0xFF1D9E75),
     ),
   ];
 
-  // ─── Dados da home (simula retorno do backend) ─────────────────
-  // Para testar, troque o _dados em home_screen.dart por:
-  //   BancoMock.novoUsuario
-  //   BancoMock.usuarioNormal
-  //   BancoMock.usuarioComSugestao
+  // ─── Métodos computados — Rota ─────────────────────────────────
 
-  static final DadosHome novoUsuario = DadosHome(
-    nomeUsuario: '',
-    deslocamentosHoje: 0,
-    tempoTotalHoje: '',
-    graficoSemana: [],
-    diaAtualIndex: 0,
+  static Rota rotaPorId(int id) => rotas.firstWhere((r) => r.id == id);
+
+  static List<Deslocamento> deslocamentosDaRota(int rotaId) =>
+      deslocamentos.where((d) => d.rotaId == rotaId).toList();
+
+  static int usosDaRota(int rotaId) => deslocamentosDaRota(rotaId).length;
+
+  static String ultimoUsoDaRota(int rotaId) {
+    final lista = deslocamentosDaRota(rotaId);
+    if (lista.isEmpty) return '—';
+    return lista.last.data;
+  }
+
+  static String duracaoDeslocamento(Deslocamento d) {
+    final partesSaida = d.horarioSaida.split(':');
+    final partesChegada = d.horarioChegada.split(':');
+    final saidaMin = int.parse(partesSaida[0]) * 60 + int.parse(partesSaida[1]);
+    final chegadaMin = int.parse(partesChegada[0]) * 60 + int.parse(partesChegada[1]);
+    final diferenca = chegadaMin - saidaMin;
+    final total = diferenca < 0 ? diferenca + 24 * 60 : diferenca;
+    if (total < 60) return '$total min';
+    final h = total ~/ 60;
+    final m = total % 60;
+    return m == 0 ? '${h}h' : '${h}h ${m}min';
+  }
+
+  // ─── Métodos computados — Home ─────────────────────────────────
+
+  static int get totalDeslocamentosHoje =>
+      deslocamentos.where((d) => d.data == 'Hoje').length;
+
+  static String get tempoTotalHojeFormatado {
+    final deHoje = deslocamentos.where((d) => d.data == 'Hoje').toList();
+    if (deHoje.isEmpty) return '0 min';
+    int totalMin = 0;
+    for (final d in deHoje) {
+      final partesSaida = d.horarioSaida.split(':');
+      final partesChegada = d.horarioChegada.split(':');
+      final saidaMin = int.parse(partesSaida[0]) * 60 + int.parse(partesSaida[1]);
+      final chegadaMin = int.parse(partesChegada[0]) * 60 + int.parse(partesChegada[1]);
+      final diferenca = chegadaMin - saidaMin;
+      totalMin += diferenca < 0 ? diferenca + 24 * 60 : diferenca;
+    }
+    if (totalMin < 60) return '$totalMin min';
+    final h = totalMin ~/ 60;
+    final m = totalMin % 60;
+    return m == 0 ? '${h}h' : '${h}h ${m}min';
+  }
+
+  static int get diaAtualIndex => (DateTime.now().weekday - 1) % 7;
+
+  static List<int> get graficoSemana {
+    final hoje = DateTime.now();
+    final contagem = List<int>.filled(7, 0);
+    for (final d in deslocamentos) {
+      int? diaIndex;
+      if (d.data == 'Hoje') {
+        diaIndex = (hoje.weekday - 1) % 7;
+      } else if (d.data == 'Ontem') {
+        diaIndex = (hoje.subtract(const Duration(days: 1)).weekday - 1) % 7;
+      }
+      if (diaIndex != null) contagem[diaIndex]++;
+    }
+    return contagem;
+  }
+
+  // ─── Mock específico da Home ───────────────────────────────────
+  // Em produção, sugestão e alerta viriam de algoritmos e APIs externas.
+  // Para testar os estados da home, altere os valores abaixo:
+  //   sugestaoAtual = null  →  estado normal
+  //   rotas = []            →  estado novo usuário
+
+  static SugestaoRota? sugestaoAtual = SugestaoRota(
+    rota: 'Casa → IFS',
+    transporte: 'Ônibus',
+    tempoEstimado: '~35 min',
+    saidaIdeal: '07:20',
   );
 
-  static final DadosHome usuarioNormal = DadosHome(
-    nomeUsuario: 'Chris',
-    deslocamentosHoje: 2,
-    tempoTotalHoje: '1h 14min',
-    graficoSemana: [34, 27, 0, 44, 25, 0, 0],
-    diaAtualIndex: 4,
-    dica: 'Dica: às quartas, a Av. Tancredo Neves costuma ter +12 min de trânsito.',
+  static AlertaTransito? alertaAtual = AlertaTransito(
+    titulo: 'Trânsito elevado na Tancredo Neves',
+    mensagem: 'Considere sair 10 min mais cedo hoje.',
   );
 
-  static final DadosHome usuarioComSugestao = DadosHome(
-    nomeUsuario: 'Lucas',
-    deslocamentosHoje: 0,
-    tempoTotalHoje: '— min',
-    sugestao: SugestaoRota(
-      rota: 'Casa → IFS',
-      transporte: 'Ônibus',
-      tempoEstimado: '~35 min',
-      saidaIdeal: '07:20',
-    ),
-    alertaTransito: AlertaTransito(
-      titulo: 'Trânsito elevado na Tancredo Neves',
-      mensagem: 'Considere sair 10 min mais cedo hoje.',
-    ),
-    graficoSemana: [0, 0, 0, 0, 0, 0, 0],
-    diaAtualIndex: 0,
-  );
+  static String? dicaAtual =
+      'Dica: às quartas, a Av. Tancredo Neves costuma ter +12 min de trânsito.';
 }

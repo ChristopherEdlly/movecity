@@ -208,7 +208,7 @@ class _SelectRouteScreenState extends State<SelectRouteScreen> {
 }
 
 class _CartaoRota extends StatelessWidget {
-  final DadosRota rota;
+  final Rota rota;
   final bool selecionado;
   final VoidCallback aoTocar;
 
@@ -279,7 +279,7 @@ class _CartaoRota extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '${rota.usos} usos',
+                    '${BancoMock.usosDaRota(rota.id)} usos',
                     style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFF777777),
@@ -375,7 +375,7 @@ class _DivisorPasso extends StatelessWidget {
 
 class _RotaIndexada {
   final int index;
-  final DadosRota rota;
+  final Rota rota;
 
   const _RotaIndexada({required this.index, required this.rota});
 }

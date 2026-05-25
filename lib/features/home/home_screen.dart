@@ -9,12 +9,6 @@ import '../rotas/minhas_rotas_screen.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  // Para testar, troque por:
-  // BancoMock.novoUsuario
-  // BancoMock.usuarioNormal
-  // BancoMock.usuarioComSugestao
-  static final _dados = BancoMock.novoUsuario;
-
   String get _saudacao {
     final hora = DateTime.now().hour;
     if (hora < 12) return 'Bom dia';
@@ -36,9 +30,8 @@ class HomeScreen extends StatelessWidget {
   }
 
   bool get _ehNovoUsuario => BancoMock.rotas.isEmpty;
-  bool get _temSugestao => _dados.sugestao != null;
   String get _tituloRotas =>
-      _dados.deslocamentosHoje > 0 ? 'Rotas recentes' : 'Suas rotas';
+      BancoMock.totalDeslocamentosHoje > 0 ? 'Rotas recentes' : 'Suas rotas';
 
   @override
   Widget build(BuildContext context) {
@@ -52,8 +45,8 @@ class HomeScreen extends StatelessWidget {
             _buildCabecalho(),
             const SizedBox(height: 12),
             if (_ehNovoUsuario) ..._conteudoNovoUsuario(context),
-            if (!_ehNovoUsuario && _temSugestao) ..._conteudoComSugestao(context),
-            if (!_ehNovoUsuario && !_temSugestao) ..._conteudoNormal(context),
+            if (!_ehNovoUsuario && BancoMock.sugestaoAtual != null) ..._conteudoComSugestao(context),
+            if (!_ehNovoUsuario && BancoMock.sugestaoAtual == null) ..._conteudoNormal(context),
           ],
         ),
       ),
@@ -100,7 +93,7 @@ class HomeScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '$_saudacao, ${_dados.nomeUsuario}!',
+            '$_saudacao, ${BancoMock.usuarioLogado.nome}!',
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 6),
@@ -112,11 +105,11 @@ class HomeScreen extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _buildCartaoEstatistica('Deslocamentos hoje', '${_dados.deslocamentosHoje}'),
+                child: _buildCartaoEstatistica('Deslocamentos hoje', '${BancoMock.totalDeslocamentosHoje}'),
               ),
               const SizedBox(width: 14),
               Expanded(
-                child: _buildCartaoEstatistica('Tempo total hoje', _dados.tempoTotalHoje),
+                child: _buildCartaoEstatistica('Tempo total hoje', BancoMock.tempoTotalHojeFormatado),
               ),
             ],
           ),
@@ -200,7 +193,7 @@ class HomeScreen extends StatelessWidget {
       ..._buildSecaoRotas(context),
       const SizedBox(height: 20),
       ..._buildGrafico(),
-      if (_dados.dica != null) ...[
+      if (BancoMock.dicaAtual != null) ...[
         const SizedBox(height: 12),
         Container(
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -210,7 +203,7 @@ class HomeScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: const Color(0xFFA3CC59), width: 0.75),
           ),
-          child: Text(_dados.dica!, style: const TextStyle(fontSize: 12, color: Color(0xFF3B6D11))),
+          child: Text(BancoMock.dicaAtual!, style: const TextStyle(fontSize: 12, color: Color(0xFF3B6D11))),
         ),
       ] else
         const SizedBox(height: 24),
@@ -218,8 +211,8 @@ class HomeScreen extends StatelessWidget {
   }
 
   List<Widget> _conteudoComSugestao(BuildContext context) {
-    final sugestao = _dados.sugestao!;
-    final alerta = _dados.alertaTransito;
+    final sugestao = BancoMock.sugestaoAtual!;
+    final alerta = BancoMock.alertaAtual;
 
     return [
       Container(
@@ -382,7 +375,7 @@ class HomeScreen extends StatelessWidget {
     ];
   }
 
-  Widget _buildCartaoRota(BuildContext context, DadosRota rota) {
+  Widget _buildCartaoRota(BuildContext context, Rota rota) {
     return GestureDetector(
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (_) => EditarRotaScreen(rota: rota)));
@@ -405,7 +398,7 @@ class HomeScreen extends StatelessWidget {
                 children: [
                   Text(rota.nome, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  Text(rota.ultimoUso, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                  Text(BancoMock.ultimoUsoDaRota(rota.id), style: const TextStyle(fontSize: 11, color: Colors.grey)),
                 ],
               ),
             ),
@@ -417,10 +410,10 @@ class HomeScreen extends StatelessWidget {
   }
 
   List<Widget> _buildGrafico() {
-    if (_dados.graficoSemana.isEmpty) return [];
+    final alturas = BancoMock.graficoSemana;
+    if (alturas.isEmpty) return [];
 
     const dias = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
-    final alturas = _dados.graficoSemana;
     final maximo = alturas.reduce((a, b) => a > b ? a : b);
     final semDados = alturas.every((v) => v == 0);
 
@@ -445,7 +438,7 @@ class HomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 for (int i = 0; i < 7; i++)
-                  _buildBarra(dias[i], alturas[i], maximo, i == _dados.diaAtualIndex),
+                  _buildBarra(dias[i], alturas[i], maximo, i == BancoMock.diaAtualIndex),
               ],
             ),
             if (semDados) ...[

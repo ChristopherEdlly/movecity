@@ -113,7 +113,7 @@ class HistoricoScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          Expanded(child: _CartaoResumo(label: 'Deslocamentos', valor: '${BancoMock.historico.length}')),
+          Expanded(child: _CartaoResumo(label: 'Deslocamentos', valor: '${BancoMock.deslocamentos.length}')),
           const SizedBox(width: 12),
           Expanded(child: _CartaoResumo(label: 'Tempo total', valor: '22h')),
           const SizedBox(width: 12),
@@ -160,15 +160,15 @@ class _ListaHistorico extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      itemCount: BancoMock.historico.length,
+      itemCount: BancoMock.deslocamentos.length,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (context, index) => _CartaoHistorico(entrada: BancoMock.historico[index]),
+      itemBuilder: (context, index) => _CartaoHistorico(entrada: BancoMock.deslocamentos[index]),
     );
   }
 }
 
 class _CartaoHistorico extends StatelessWidget {
-  final EntradaHistorico entrada;
+  final Deslocamento entrada;
 
   const _CartaoHistorico({required this.entrada});
 
@@ -199,7 +199,10 @@ class _CartaoHistorico extends StatelessWidget {
               width: 12,
               height: 12,
               margin: const EdgeInsets.only(top: 6),
-              decoration: BoxDecoration(color: entrada.cor, shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                color: BancoMock.rotaPorId(entrada.rotaId).cor,
+                shape: BoxShape.circle,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -207,7 +210,7 @@ class _CartaoHistorico extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    entrada.titulo,
+                    BancoMock.rotaPorId(entrada.rotaId).nome,
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 4),
@@ -226,8 +229,12 @@ class _CartaoHistorico extends StatelessWidget {
               ),
             ),
             Text(
-              entrada.duracao,
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: entrada.cor),
+              BancoMock.duracaoDeslocamento(entrada),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: BancoMock.rotaPorId(entrada.rotaId).cor,
+              ),
             ),
           ],
         ),

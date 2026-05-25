@@ -3,7 +3,7 @@ import '../../core/mock/banco_mock.dart';
 import '../../core/widgets/barra_navegacao.dart';
 
 class EditarDeslocamentoScreen extends StatefulWidget {
-  final EntradaHistorico entrada;
+  final Deslocamento entrada;
 
   const EditarDeslocamentoScreen({super.key, required this.entrada});
 
@@ -310,7 +310,7 @@ class _EditarDeslocamentoScreenState extends State<EditarDeslocamentoScreen> {
         border: Border.all(color: const Color(0xFFDCDCDC)),
       ),
       child: Text(
-        widget.entrada.titulo,
+        BancoMock.rotaPorId(widget.entrada.rotaId).nome,
         style: const TextStyle(fontSize: 15, color: Color(0xFF808080)),
       ),
     );
