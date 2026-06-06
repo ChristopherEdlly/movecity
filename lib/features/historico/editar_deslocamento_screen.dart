@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/mock/banco_mock.dart';
+import '../../core/services/deslocamento_service.dart';
 import '../../core/widgets/barra_navegacao.dart';
 
 class EditarDeslocamentoScreen extends StatefulWidget {
@@ -19,6 +20,7 @@ class _EditarDeslocamentoScreenState extends State<EditarDeslocamentoScreen> {
   late String _transporteSelecionado;
   late TimeOfDay _horarioSaida;
   late TimeOfDay _horarioChegada;
+  bool _salvando = false;
 
   @override
   void initState() {
@@ -57,6 +59,53 @@ class _EditarDeslocamentoScreenState extends State<EditarDeslocamentoScreen> {
     final horas = min ~/ 60;
     final minutos = min % 60;
     return minutos == 0 ? '${horas}h' : '${horas}h ${minutos}min';
+  }
+
+  Future<void> _salvarAlteracoes() async {
+    setState(() => _salvando = true);
+
+    final deslocamentoAtualizado = Deslocamento(
+      id: widget.entrada.id,
+      rotaId: widget.entrada.rotaId,
+      data: widget.entrada.data,
+      horarioSaida: _formatarHorario(_horarioSaida),
+      horarioChegada: _formatarHorario(_horarioChegada),
+      transporte: _transporteSelecionado,
+      observacao: _observacaoController.text.trim(),
+    );
+
+    try {
+      await DeslocamentoService().atualizarDeslocamento(deslocamentoAtualizado);
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Falha ao salvar alterações. Tente novamente.')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _salvando = false);
+      }
+    }
+  }
+
+  Future<void> _excluirDeslocamento() async {
+    try {
+      await DeslocamentoService().excluirDeslocamento(widget.entrada.id);
+      if (mounted) {
+        Navigator.pop(context);
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Falha ao excluir deslocamento. Tente novamente.')),
+        );
+      }
+    }
   }
 
   Future<void> _selecionarHorario(BuildContext context, {required bool ehSaida}) async {
@@ -125,10 +174,7 @@ class _EditarDeslocamentoScreenState extends State<EditarDeslocamentoScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.pop(context);
-                    },
+                    onPressed: _excluirDeslocamento,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -218,16 +264,25 @@ class _EditarDeslocamentoScreenState extends State<EditarDeslocamentoScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: _salvando ? null : _salvarAlteracoes,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF1D9E75),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: const Text(
-                        'Salvar alterações',
-                        style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
-                      ),
+                      child: _salvando
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                strokeWidth: 2.2,
+                              ),
+                            )
+                          : const Text(
+                              'Salvar alterações',
+                              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 12),

@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../core/mock/banco_mock.dart';
+import '../../core/services/deslocamento_service.dart';
 import '../../core/widgets/barra_navegacao.dart';
 import 'editar_deslocamento_screen.dart';
 
-class HistoricoScreen extends StatelessWidget {
+class HistoricoScreen extends StatefulWidget {
   const HistoricoScreen({super.key});
+
+  @override
+  State<HistoricoScreen> createState() => _HistoricoScreenState();
+}
+
+class _HistoricoScreenState extends State<HistoricoScreen> {
+  final _service = DeslocamentoService();
 
   String get _mesAno {
     final agora = DateTime.now();
@@ -29,15 +37,44 @@ class HistoricoScreen extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              child: Column(
-                children: [
-                  const SizedBox(height: 16),
-                  _buildFiltroData(),
-                  const SizedBox(height: 16),
-                  _buildCartoesResumo(),
-                  const SizedBox(height: 16),
-                  const Expanded(child: _ListaHistorico()),
-                ],
+              child: StreamBuilder<List<Deslocamento>>(
+                stream: _service.listarDeslocamentos(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasError) {
+                    return const Center(
+                      child: Text('Erro ao carregar deslocamentos.'),
+                    );
+                  }
+
+                  final deslocamentos = snapshot.data ?? [];
+
+                  return Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      _buildFiltroData(),
+                      const SizedBox(height: 16),
+                      _buildCartoesResumo(deslocamentos.length),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: deslocamentos.isEmpty
+                            ? const Center(
+                                child: Text(
+                                  'Nenhum deslocamento encontrado.',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              )
+                            : _ListaHistorico(deslocamentos: deslocamentos),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -108,12 +145,12 @@ class HistoricoScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCartoesResumo() {
+  Widget _buildCartoesResumo(int totalDeslocamentos) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          Expanded(child: _CartaoResumo(label: 'Deslocamentos', valor: '${BancoMock.deslocamentos.length}')),
+          Expanded(child: _CartaoResumo(label: 'Deslocamentos', valor: '$totalDeslocamentos')),
           const SizedBox(width: 12),
           Expanded(child: _CartaoResumo(label: 'Tempo total', valor: '22h')),
           const SizedBox(width: 12),
@@ -154,15 +191,17 @@ class _CartaoResumo extends StatelessWidget {
 }
 
 class _ListaHistorico extends StatelessWidget {
-  const _ListaHistorico();
+  final List<Deslocamento> deslocamentos;
+
+  const _ListaHistorico({required this.deslocamentos});
 
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      itemCount: BancoMock.deslocamentos.length,
+      itemCount: deslocamentos.length,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (context, index) => _CartaoHistorico(entrada: BancoMock.deslocamentos[index]),
+      itemBuilder: (context, index) => _CartaoHistorico(entrada: deslocamentos[index]),
     );
   }
 }
