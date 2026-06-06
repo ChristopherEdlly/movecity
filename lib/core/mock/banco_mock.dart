@@ -17,6 +17,20 @@ class Usuario {
     required this.email,
     required this.senha,
   });
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'nome': nome,
+        'email': email,
+        'senha': senha,
+      };
+
+  factory Usuario.fromMap(Map<String, dynamic> map) => Usuario(
+        id: (map['id'] as num).toInt(),
+        nome: map['nome'] as String,
+        email: map['email'] as String,
+        senha: map['senha'] as String,
+      );
 }
 
 class Rota {
@@ -41,6 +55,30 @@ class Rota {
     required this.cor,
     this.observacoes,
   });
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'usuarioId': usuarioId,
+        'nome': nome,
+        'origem': origem,
+        'destino': destino,
+        'tempoEstimadoMin': tempoEstimadoMin,
+        'transporte': transporte,
+        'cor': cor.toARGB32(),
+        'observacoes': observacoes,
+      };
+
+  factory Rota.fromMap(Map<String, dynamic> map) => Rota(
+        id: (map['id'] as num).toInt(),
+        usuarioId: (map['usuarioId'] as num).toInt(),
+        nome: map['nome'] as String,
+        origem: map['origem'] as String,
+        destino: map['destino'] as String,
+        tempoEstimadoMin: (map['tempoEstimadoMin'] as num).toInt(),
+        transporte: map['transporte'] as String,
+        cor: Color(map['cor'] as int),
+        observacoes: map['observacoes'] as String?,
+      );
 }
 
 class Deslocamento {
@@ -61,6 +99,26 @@ class Deslocamento {
     required this.transporte,
     this.observacao = '',
   });
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'rotaId': rotaId,
+        'data': data,
+        'horarioSaida': horarioSaida,
+        'horarioChegada': horarioChegada,
+        'transporte': transporte,
+        'observacao': observacao,
+      };
+
+  factory Deslocamento.fromMap(Map<String, dynamic> map) => Deslocamento(
+        id: (map['id'] as num).toInt(),
+        rotaId: (map['rotaId'] as num).toInt(),
+        data: map['data'] as String,
+        horarioSaida: map['horarioSaida'] as String,
+        horarioChegada: map['horarioChegada'] as String,
+        transporte: map['transporte'] as String,
+        observacao: map['observacao'] as String? ?? '',
+      );
 }
 
 class SugestaoRota {
