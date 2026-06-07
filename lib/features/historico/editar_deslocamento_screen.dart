@@ -21,6 +21,7 @@ class _EditarDeslocamentoScreenState extends State<EditarDeslocamentoScreen> {
   late TimeOfDay _horarioSaida;
   late TimeOfDay _horarioChegada;
   bool _salvando = false;
+  bool _excluindo = false;
 
   @override
   void initState() {
@@ -93,8 +94,9 @@ class _EditarDeslocamentoScreenState extends State<EditarDeslocamentoScreen> {
   }
 
   Future<void> _excluirDeslocamento() async {
+    setState(() => _excluindo = true);
     try {
-      await DeslocamentoService().excluirDeslocamento(widget.entrada.id);
+      await DeslocamentoService().excluirDeslocamento(widget.entrada.id.toString());
       if (mounted) {
         Navigator.pop(context);
         Navigator.pop(context);
@@ -104,6 +106,10 @@ class _EditarDeslocamentoScreenState extends State<EditarDeslocamentoScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Falha ao excluir deslocamento. Tente novamente.')),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _excluindo = false);
       }
     }
   }
@@ -174,16 +180,25 @@ class _EditarDeslocamentoScreenState extends State<EditarDeslocamentoScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _excluirDeslocamento,
+                    onPressed: _excluindo ? null : _excluirDeslocamento,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: const Text(
-                      'Sim, excluir',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-                    ),
+                    child: _excluindo
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              strokeWidth: 2.2,
+                            ),
+                          )
+                        : const Text(
+                            'Sim, excluir',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 10),

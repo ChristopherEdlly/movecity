@@ -1,35 +1,21 @@
-import 'dart:async';
-
 import '../mock/banco_mock.dart';
+import '../repositories/deslocamento_repositorio.dart';
 
 class DeslocamentoService {
-  DeslocamentoService._internal() {
-    _controller.add(List<Deslocamento>.unmodifiable(BancoMock.deslocamentos));
+  Stream<List<Deslocamento>> listarDeslocamentos() {
+    final rotaIds = BancoMock.rotas.map((rota) => rota.id).toList();
+    return DeslocamentoRepositorio.buscarDeslocamentosDoUsuario(rotaIds);
   }
 
-  static final DeslocamentoService _instance = DeslocamentoService._internal();
+  Future<void> atualizarDeslocamento(Deslocamento deslocamento) {
+    return DeslocamentoRepositorio.salvar(deslocamento);
+  }
 
-  final StreamController<List<Deslocamento>> _controller =
-      StreamController<List<Deslocamento>>.broadcast();
-
-  factory DeslocamentoService() => _instance;
-
-  Stream<List<Deslocamento>> listarDeslocamentos() => _controller.stream;
-
-  Future<void> atualizarDeslocamento(Deslocamento deslocamento) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    final index = BancoMock.deslocamentos.indexWhere((d) => d.id == deslocamento.id);
-    if (index == -1) {
-      throw Exception('Deslocamento não encontrado');
+  Future<void> excluirDeslocamento(String id) {
+    final deslocamentoId = int.tryParse(id);
+    if (deslocamentoId == null) {
+      throw Exception('ID de deslocamento inválido');
     }
-
-    BancoMock.deslocamentos[index] = deslocamento;
-    _controller.add(List<Deslocamento>.unmodifiable(BancoMock.deslocamentos));
-  }
-
-  Future<void> excluirDeslocamento(int id) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    BancoMock.deslocamentos.removeWhere((d) => d.id == id);
-    _controller.add(List<Deslocamento>.unmodifiable(BancoMock.deslocamentos));
+    return DeslocamentoRepositorio.excluir(deslocamentoId);
   }
 }
