@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../app_routes.dart';
+import '../../core/mock/banco_mock.dart';
+import '../../core/repositories/deslocamento_repositorio.dart';
 
 class InTransitScreen extends StatelessWidget {
-  const InTransitScreen({super.key});
+  final Rota rota;
+  final Deslocamento deslocamento;
+
+  const InTransitScreen({
+    super.key,
+    required this.rota,
+    required this.deslocamento,
+  });
 
   static const Color _fundoMapa = Color(0xFFE3E8E0);
 
@@ -19,12 +28,12 @@ class InTransitScreen extends StatelessWidget {
             child: _BotaoVoltar(onTap: () => Navigator.maybePop(context)),
           ),
           const Positioned(top: 150, right: 18, child: _BotaoLocalizacao()),
-          const Positioned.fill(child: _TrajetoMockado()),
-          const Positioned(
+          Positioned.fill(child: _TrajetoMockado(destino: rota.destino)),
+          Positioned(
             left: 0,
             right: 0,
             bottom: 0,
-            child: _ResumoViagem(),
+            child: _ResumoViagem(rota: rota, deslocamento: deslocamento),
           ),
         ],
       ),
@@ -98,7 +107,9 @@ class _MapaPainter extends CustomPainter {
 }
 
 class _TrajetoMockado extends StatelessWidget {
-  const _TrajetoMockado();
+  final String destino;
+
+  const _TrajetoMockado({required this.destino});
 
   static const Color _verde = Color(0xFF1D9E75);
   static const Color _vermelhoDestino = Color(0xFFD62F2F);
@@ -111,7 +122,7 @@ class _TrajetoMockado extends StatelessWidget {
         final altura = constraints.maxHeight;
         final yLinha = altura * 0.31;
         final pontoAtual = Offset(largura * 0.37, yLinha);
-        final destino = Offset(largura * 0.78, yLinha);
+        final pontoDestino = Offset(largura * 0.78, yLinha);
 
         return Stack(
           children: [
@@ -148,8 +159,9 @@ class _TrajetoMockado extends StatelessWidget {
               ),
             ),
             Positioned(
-              left: destino.dx - 12,
-              top: destino.dy - 22,
+              left: pontoDestino.dx - 34,
+              top: pontoDestino.dy - 22,
+              width: 68,
               child: Column(
                 children: [
                   Container(
@@ -169,9 +181,12 @@ class _TrajetoMockado extends StatelessWidget {
                   ),
                   Container(width: 3, height: 16, color: _vermelhoDestino),
                   const SizedBox(height: 2),
-                  const Text(
-                    'IFS',
-                    style: TextStyle(
+                  Text(
+                    destino.isEmpty ? 'Destino' : destino,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
                       color: Color(0xFF3A3A3A),
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
@@ -249,10 +264,20 @@ class _BotaoLocalizacao extends StatelessWidget {
   }
 }
 
-class _ResumoViagem extends StatelessWidget {
-  const _ResumoViagem();
+class _ResumoViagem extends StatefulWidget {
+  final Rota rota;
+  final Deslocamento deslocamento;
 
+  const _ResumoViagem({required this.rota, required this.deslocamento});
+
+  @override
+  State<_ResumoViagem> createState() => _ResumoViagemState();
+}
+
+class _ResumoViagemState extends State<_ResumoViagem> {
   static const Color _verde = Color(0xFF1D9E75);
+
+  bool _salvandoChegada = false;
 
   @override
   Widget build(BuildContext context) {
@@ -289,9 +314,9 @@ class _ResumoViagem extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          const Text(
-            'Casa → IFS',
-            style: TextStyle(
+          Text(
+            widget.rota.nome,
+            style: const TextStyle(
               color: Color(0xFF202221),
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -314,26 +339,26 @@ class _ResumoViagem extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
-          const Row(
+          Row(
             children: [
               Expanded(
                 child: _MetricaViagem(
-                  rotulo: 'Tempo decorrido',
-                  valor: '18 min',
+                  rotulo: 'Transporte',
+                  valor: widget.deslocamento.transporte,
                 ),
               ),
-              _DivisorMetrica(),
+              const _DivisorMetrica(),
               Expanded(
                 child: _MetricaViagem(
-                  rotulo: 'Tempo restante',
-                  valor: '~17 min',
+                  rotulo: 'Saída',
+                  valor: widget.deslocamento.horarioSaida,
                 ),
               ),
-              _DivisorMetrica(),
+              const _DivisorMetrica(),
               Expanded(
                 child: _MetricaViagem(
-                  rotulo: 'Chegada prevista',
-                  valor: '08:01',
+                  rotulo: 'Estimativa',
+                  valor: '~${widget.rota.tempoEstimadoMin} min',
                 ),
               ),
             ],
@@ -345,25 +370,29 @@ class _ResumoViagem extends StatelessWidget {
               color: const Color(0xFFF1F1F1),
               borderRadius: BorderRadius.circular(9),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.arrow_forward, color: _verde, size: 18),
-                SizedBox(width: 12),
+                const Icon(Icons.arrow_forward, color: _verde, size: 18),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Vire à direita na Av. Tancredo Neves',
-                        style: TextStyle(
+                        widget.rota.destino.isEmpty
+                            ? 'Siga até o destino'
+                            : widget.rota.destino,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
                           color: Color(0xFF202221),
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      SizedBox(height: 2),
-                      Text(
-                        'em 200 m',
+                      const SizedBox(height: 2),
+                      const Text(
+                        'rota em andamento',
                         style: TextStyle(
                           color: Color(0xFF8C8C8C),
                           fontSize: 11,
@@ -380,11 +409,7 @@ class _ResumoViagem extends StatelessWidget {
             width: double.infinity,
             height: 48,
             child: ElevatedButton(
-              onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                context,
-                AppRoutes.home,
-                (_) => false,
-              ),
+              onPressed: _salvandoChegada ? null : _confirmarChegada,
               style: ElevatedButton.styleFrom(
                 backgroundColor: _verde,
                 foregroundColor: Colors.white,
@@ -394,15 +419,60 @@ class _ResumoViagem extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: const Text(
-                'Cheguei ao destino',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
-              ),
+              child: _salvandoChegada
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        strokeWidth: 2.2,
+                      ),
+                    )
+                  : const Text(
+                      'Cheguei ao destino',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _confirmarChegada() async {
+    final agora = TimeOfDay.now();
+    final horarioChegada =
+        '${agora.hour.toString().padLeft(2, '0')}:${agora.minute.toString().padLeft(2, '0')}';
+
+    final deslocamentoFinalizado = Deslocamento(
+      id: widget.deslocamento.id,
+      rotaId: widget.deslocamento.rotaId,
+      data: widget.deslocamento.data,
+      horarioSaida: widget.deslocamento.horarioSaida,
+      horarioChegada: horarioChegada,
+      transporte: widget.deslocamento.transporte,
+      observacao: widget.deslocamento.observacao,
+    );
+
+    setState(() => _salvandoChegada = true);
+
+    try {
+      await DeslocamentoRepositorio.salvar(deslocamentoFinalizado);
+      if (!mounted) return;
+      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (_) => false);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Falha ao registrar chegada. Tente novamente.'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _salvandoChegada = false);
+    }
   }
 }
 
@@ -426,6 +496,8 @@ class _MetricaViagem extends StatelessWidget {
         const SizedBox(height: 3),
         Text(
           valor,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             color: Color(0xFF202221),
             fontSize: 14,

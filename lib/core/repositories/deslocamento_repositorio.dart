@@ -12,10 +12,11 @@ class DeslocamentoRepositorio {
 
   // ─── Conversão ────────────────────────────────────────────────
 
-  static Map<String, dynamic> _paraMapa(Deslocamento d) {
+  static Map<String, dynamic> _paraMapa(Deslocamento d, User usuario) {
     return {
+      'usuarioId': usuario.uid,
       'rotaId': d.rotaId,
-      'criado_por': FirebaseAuth.instance.currentUser?.email ?? '',
+      'criado_por': usuario.email ?? '',
       'data': d.data,
       'horarioSaida': d.horarioSaida,
       'horarioChegada': d.horarioChegada,
@@ -44,26 +45,44 @@ class DeslocamentoRepositorio {
         .collection(_colecao)
         .where('rotaId', isEqualTo: rotaId)
         .snapshots()
-        .map((snap) => snap.docs.map((doc) => _deMapa(doc.data(), doc.id)).toList());
+        .map(
+          (snap) =>
+              snap.docs.map((doc) => _deMapa(doc.data(), doc.id)).toList(),
+        );
   }
 
   // Busca todos os deslocamentos de um usuário (via lista de rotaIds).
-  static Stream<List<Deslocamento>> buscarDeslocamentosDoUsuario(List<int> rotaIds) {
+  static Stream<List<Deslocamento>> buscarDeslocamentosDoUsuario(
+    List<int> rotaIds,
+  ) {
     if (rotaIds.isEmpty) return Stream.value([]);
+    final usuario = FirebaseAuth.instance.currentUser;
+    if (usuario == null) return Stream.value([]);
+
     return _db
         .collection(_colecao)
-        .where('rotaId', whereIn: rotaIds)
+        .where('usuarioId', isEqualTo: usuario.uid)
         .snapshots()
-        .map((snap) => snap.docs.map((doc) => _deMapa(doc.data(), doc.id)).toList());
+        .map(
+          (snap) => snap.docs
+              .map((doc) => _deMapa(doc.data(), doc.id))
+              .where((deslocamento) => rotaIds.contains(deslocamento.rotaId))
+              .toList(),
+        );
   }
 
   // ─── Escrita ──────────────────────────────────────────────────
 
   static Future<void> salvar(Deslocamento d) async {
+    final usuario = FirebaseAuth.instance.currentUser;
+    if (usuario == null) {
+      throw StateError('Nenhum usuario logado para salvar deslocamento.');
+    }
+
     await _db
         .collection(_colecao)
         .doc(d.id.toString())
-        .set(_paraMapa(d));
+        .set(_paraMapa(d, usuario));
   }
 
   static Future<void> excluir(int deslocamentoId) async {
