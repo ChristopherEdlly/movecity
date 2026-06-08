@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/mock/banco_mock.dart';
 import 'package:flutter/material.dart';
+import '../../app_routes.dart';
 import '../../core/repositories/deslocamento_repositorio.dart';
 import '../../core/repositories/rota_repositorio.dart';
 import '../../core/widgets/barra_navegacao.dart';
@@ -32,7 +33,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _ouvirRotas() {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.pushReplacementNamed(context, AppRoutes.login);
+      });
+      return;
+    }
     _assinaturaRotas = RotaRepositorio.buscarRotas(uid).listen(
       (rotas) {
         if (!mounted) return;
