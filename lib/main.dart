@@ -1,6 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-
+import 'auth/auth_gate.dart';
 import 'app_routes.dart';
 import 'firebase_options.dart';
 
@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         fontFamily: 'Inter',
       ),
-      initialRoute: AppRoutes.login,
+      home: const AuthGate(),
       onGenerateRoute: AppRoutes.onGenerate,
     );
   }

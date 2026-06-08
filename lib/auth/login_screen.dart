@@ -16,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _senhaController = TextEditingController();
   bool _isLoading = false;
   bool _mostrarSenha = false;
+  bool _loadingGoogle = false;
 
   final Color brandGreen = const Color(0xFF1D9E75);
 
@@ -129,19 +130,29 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 16),
 
                  OutlinedButton(
-                  onPressed: () async {
-                    try {
-                      final user = await AuthService().loginComGoogle();
+                  onPressed: _loadingGoogle ? null : () async {
+                        setState(() {
+                          _loadingGoogle = true;
+                        });
 
-                      if (user != null && mounted) {
-                        Navigator.pushReplacementNamed(context, AppRoutes.home);
-                      }
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(e.toString())),
-                      );
-                    }
-                  },
+                        try {
+                          final user = await AuthService().loginComGoogle();
+
+                          if (user != null && mounted) {
+                            Navigator.pushReplacementNamed(context, AppRoutes.home);
+                          }
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(e.toString())),
+                          );
+                        } finally {
+                          if (mounted) {
+                            setState(() {
+                              _loadingGoogle = false;
+                            });
+                          }
+                        }
+                      },
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 22),
                     shape: RoundedRectangleBorder(
@@ -152,14 +163,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: 2,
                     ),
                   ),
-                  child:  Text(
-                    'Login com Google',
-                    style: TextStyle(
-                      color: brandGreen,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
+                  child: _loadingGoogle
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(
+                            'Login com Google',
+                            style: TextStyle(
+                              color: brandGreen,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
                 ),
                     const SizedBox(height: 16),
                     GestureDetector(
