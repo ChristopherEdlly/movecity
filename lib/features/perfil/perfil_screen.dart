@@ -1,6 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../app_routes.dart';
-import '../../core/mock/banco_mock.dart';
 import '../../core/widgets/barra_navegacao.dart';
 
 class PerfilScreen extends StatefulWidget {
@@ -18,8 +18,10 @@ class _PerfilScreenState extends State<PerfilScreen> {
   @override
   void initState() {
     super.initState();
-    _nomeController = TextEditingController(text: BancoMock.usuarioLogado.nome);
-    _emailController = TextEditingController(text: BancoMock.usuarioLogado.email);
+    final user = FirebaseAuth.instance.currentUser;
+    final nome = user?.displayName ?? user?.email?.split('@')[0] ?? '';
+    _nomeController = TextEditingController(text: nome);
+    _emailController = TextEditingController(text: user?.email ?? '');
   }
 
   @override
@@ -30,20 +32,38 @@ class _PerfilScreenState extends State<PerfilScreen> {
   }
 
   Future<void> _salvarPerfil() async {
-    if (_nomeController.text.trim().isEmpty || _emailController.text.trim().isEmpty) {
+    if (_nomeController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nome e e-mail não podem ficar vazios.')),
+        const SnackBar(content: Text('Nome não pode ficar vazio.')),
       );
       return;
     }
 
     setState(() => _salvando = true);
-    await Future.delayed(const Duration(milliseconds: 400));
-    if (mounted) {
-      setState(() => _salvando = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Perfil atualizado!')),
+    try {
+      await FirebaseAuth.instance.currentUser?.updateDisplayName(
+        _nomeController.text.trim(),
       );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Perfil atualizado!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Falha ao salvar. Tente novamente.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _salvando = false);
+    }
+  }
+
+  Future<void> _fazerLogout() async {
+    await FirebaseAuth.instance.signOut();
+    if (mounted) {
+      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
     }
   }
 
@@ -79,7 +99,8 @@ class _PerfilScreenState extends State<PerfilScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+                    Navigator.pop(context);
+                    _fazerLogout();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
@@ -155,6 +176,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                           _emailController,
                           'seu@email.com',
                           teclado: TextInputType.emailAddress,
+                          somenteLeitura: true,
                         ),
                       ],
                     ),
@@ -215,8 +237,11 @@ class _PerfilScreenState extends State<PerfilScreen> {
   }
 
   Widget _buildCabecalho() {
-    final iniciais = BancoMock.usuarioLogado.nome
-        .split(' ')
+    final user = FirebaseAuth.instance.currentUser;
+    final nome = user?.displayName ?? user?.email?.split('@')[0] ?? 'Usuário';
+    final iniciais = nome
+        .split(RegExp(r'[\s.]'))
+        .where((p) => p.isNotEmpty)
         .take(2)
         .map((p) => p[0].toUpperCase())
         .join();
@@ -247,12 +272,12 @@ class _PerfilScreenState extends State<PerfilScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            BancoMock.usuarioLogado.nome,
+            nome,
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 4),
           Text(
-            BancoMock.usuarioLogado.email,
+            user?.email ?? '',
             style: const TextStyle(fontSize: 13, color: Color(0xFFC7F0DF)),
           ),
         ],
@@ -278,15 +303,17 @@ class _PerfilScreenState extends State<PerfilScreen> {
     TextEditingController controller,
     String placeholder, {
     TextInputType teclado = TextInputType.text,
+    bool somenteLeitura = false,
   }) {
     return TextField(
       controller: controller,
       keyboardType: teclado,
+      readOnly: somenteLeitura,
       decoration: InputDecoration(
         hintText: placeholder,
         hintStyle: const TextStyle(color: Color(0xFFBBBBBB)),
         filled: true,
-        fillColor: const Color(0xFFF8F8F8),
+        fillColor: somenteLeitura ? const Color(0xFFF0F0F0) : const Color(0xFFF8F8F8),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),

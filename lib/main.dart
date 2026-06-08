@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
@@ -11,11 +12,19 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  runApp(const MyApp());
+  final usuario = await FirebaseAuth.instance.authStateChanges().first;
+
+  final rotaInicial = usuario != null
+      ? AppRoutes.home
+      : AppRoutes.login;
+
+  runApp(MyApp(rotaInicial: rotaInicial));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String rotaInicial;
+
+  const MyApp({super.key, required this.rotaInicial});
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +33,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         fontFamily: 'Inter',
       ),
-      initialRoute: AppRoutes.login,
+      initialRoute: rotaInicial,
       onGenerateRoute: AppRoutes.onGenerate,
     );
   }
