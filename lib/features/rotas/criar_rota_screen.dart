@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/mock/banco_mock.dart';
+import '../../core/repositories/rota_repositorio.dart';
 import '../../core/widgets/barra_navegacao.dart';
 
 class CriarRotaScreen extends StatefulWidget {
@@ -17,6 +19,7 @@ class _CriarRotaScreenState extends State<CriarRotaScreen> {
   final _observacoesController = TextEditingController();
 
   String _transporteSelecionado = 'Ônibus';
+  bool _salvando = false;
 
   final List<String> _opcoesTransporte = [
     'Ônibus', 'Carro', 'A pé', 'Moto', 'Bicicleta',
@@ -30,6 +33,49 @@ class _CriarRotaScreenState extends State<CriarRotaScreen> {
     _tempoController.dispose();
     _observacoesController.dispose();
     super.dispose();
+  }
+
+  Future<void> _criarRota() async {
+    final nome = _nomeController.text.trim();
+    final origem = _origemController.text.trim();
+    final destino = _destinoController.text.trim();
+    final tempoTexto = _tempoController.text.trim();
+
+    if (nome.isEmpty || origem.isEmpty || destino.isEmpty || tempoTexto.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Preencha todos os campos obrigatórios.')),
+      );
+      return;
+    }
+
+    setState(() => _salvando = true);
+
+    final novaRota = Rota(
+      id: DateTime.now().millisecondsSinceEpoch,
+      usuarioId: BancoMock.usuarioLogado.id,
+      nome: nome,
+      origem: origem,
+      destino: destino,
+      tempoEstimadoMin: int.tryParse(tempoTexto) ?? 0,
+      transporte: _transporteSelecionado,
+      cor: const Color(0xFF1D9E75),
+      observacoes: _observacoesController.text.trim().isEmpty
+          ? null
+          : _observacoesController.text.trim(),
+    );
+
+    try {
+      await RotaRepositorio.salvar(novaRota);
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Falha ao criar rota. Tente novamente.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _salvando = false);
+    }
   }
 
   @override
@@ -83,16 +129,25 @@ class _CriarRotaScreenState extends State<CriarRotaScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: _salvando ? null : _criarRota,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF1D9E75),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: const Text(
-                        'Criar rota',
-                        style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
-                      ),
+                      child: _salvando
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                strokeWidth: 2.2,
+                              ),
+                            )
+                          : const Text(
+                              'Criar rota',
+                              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -176,14 +231,10 @@ class _CriarRotaScreenState extends State<CriarRotaScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: _transporteSelecionado == opcao
-                        ? const Color(0xFF1D9E75)
-                        : Colors.white,
+                    color: _transporteSelecionado == opcao ? const Color(0xFF1D9E75) : Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: _transporteSelecionado == opcao
-                          ? const Color(0xFF1D9E75)
-                          : const Color(0xFFDCDCDC),
+                      color: _transporteSelecionado == opcao ? const Color(0xFF1D9E75) : const Color(0xFFDCDCDC),
                     ),
                   ),
                   child: Text(

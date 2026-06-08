@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/mock/banco_mock.dart';
+import '../../core/repositories/deslocamento_repositorio.dart';
+import '../../core/repositories/rota_repositorio.dart';
 import '../../core/widgets/barra_navegacao.dart';
 import 'editar_rota_screen.dart';
 import 'criar_rota_screen.dart';
@@ -15,22 +18,86 @@ class _MinhasRotasScreenState extends State<MinhasRotasScreen> {
   final TextEditingController _buscaController = TextEditingController();
   String _termoBusca = '';
 
+  List<Rota> _rotas = [];
+  List<Deslocamento> _deslocamentos = [];
+  bool _carregando = true;
+
+  StreamSubscription<List<Rota>>? _assinaturaRotas;
+  StreamSubscription<List<Deslocamento>>? _assinaturaDeslocamentos;
+
+  @override
+  void initState() {
+    super.initState();
+    _ouvirRotas();
+  }
+
+  void _ouvirRotas() {
+    _assinaturaRotas = RotaRepositorio.buscarRotas(BancoMock.usuarioLogado.id).listen(
+      (rotas) {
+        if (!mounted) return;
+        setState(() {
+          _rotas = rotas;
+          _carregando = false;
+        });
+        _ouvirDeslocamentos(rotas.map((r) => r.id).toList());
+      },
+      onError: (_) {
+        if (!mounted) return;
+        setState(() => _carregando = false);
+      },
+    );
+  }
+
+  void _ouvirDeslocamentos(List<int> rotaIds) {
+    _assinaturaDeslocamentos?.cancel();
+    if (rotaIds.isEmpty) {
+      setState(() => _deslocamentos = []);
+      return;
+    }
+    _assinaturaDeslocamentos = DeslocamentoRepositorio.buscarDeslocamentosDoUsuario(rotaIds).listen(
+      (deslocamentos) {
+        if (!mounted) return;
+        setState(() => _deslocamentos = deslocamentos);
+      },
+    );
+  }
+
   @override
   void dispose() {
     _buscaController.dispose();
+    _assinaturaRotas?.cancel();
+    _assinaturaDeslocamentos?.cancel();
     super.dispose();
   }
 
+  int _usosDaRota(int rotaId) {
+    return _deslocamentos.where((d) => d.rotaId == rotaId).length;
+  }
+
+  String _ultimoUsoDaRota(int rotaId) {
+    final lista = _deslocamentos.where((d) => d.rotaId == rotaId).toList();
+    if (lista.isEmpty) return '—';
+    return lista.last.data;
+  }
+
   List<Rota> get _rotasFiltradas {
-    if (_termoBusca.trim().isEmpty) return BancoMock.rotas;
+    if (_termoBusca.trim().isEmpty) return _rotas;
     final termo = _termoBusca.toLowerCase();
-    return BancoMock.rotas
-        .where((r) => r.nome.toLowerCase().contains(termo))
-        .toList();
+    return _rotas.where((r) => r.nome.toLowerCase().contains(termo)).toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_carregando) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF3F3F2),
+        bottomNavigationBar: BarraNavegacao(indiceSelecionado: 2),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF1D9E75)),
+        ),
+      );
+    }
+
     final rotas = _rotasFiltradas;
 
     return Scaffold(
@@ -47,14 +114,21 @@ class _MinhasRotasScreenState extends State<MinhasRotasScreen> {
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-              itemCount: rotas.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                return _buildCartaoRota(rotas[index]);
-              },
-            ),
+            child: rotas.isEmpty
+                ? const Center(
+                    child: Text(
+                      'Nenhuma rota encontrada.',
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                    itemCount: rotas.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      return _buildCartaoRota(rotas[index]);
+                    },
+                  ),
           ),
         ],
       ),
@@ -70,11 +144,7 @@ class _MinhasRotasScreenState extends State<MinhasRotasScreen> {
             },
             child: const Text(
               'Nova rota',
-              style: TextStyle(
-                color: Color(0xFF1D9E75),
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(color: Color(0xFF1D9E75), fontSize: 15, fontWeight: FontWeight.w600),
             ),
           ),
           const SizedBox(width: 8),
@@ -107,7 +177,7 @@ class _MinhasRotasScreenState extends State<MinhasRotasScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            '${BancoMock.rotas.length} rotas cadastradas',
+            '${_rotas.length} rotas cadastradas',
             style: const TextStyle(fontSize: 13, color: Color(0xFFC7F0DF)),
           ),
         ],
@@ -171,10 +241,7 @@ class _MinhasRotasScreenState extends State<MinhasRotasScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    rota.nome,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                  ),
+                  Text(rota.nome, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
                   Text(
                     '${rota.transporte} · ~${rota.tempoEstimadoMin} min',
@@ -194,19 +261,12 @@ class _MinhasRotasScreenState extends State<MinhasRotasScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    '${BancoMock.usosDaRota(rota.id)}×',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF3B6D11),
-                    ),
+                    '${_usosDaRota(rota.id)}×',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF3B6D11)),
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  BancoMock.ultimoUsoDaRota(rota.id),
-                  style: const TextStyle(fontSize: 11, color: Colors.grey),
-                ),
+                Text(_ultimoUsoDaRota(rota.id), style: const TextStyle(fontSize: 11, color: Colors.grey)),
               ],
             ),
             const SizedBox(width: 8),

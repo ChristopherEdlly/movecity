@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'features/home/home_screen.dart';
 import 'features/rotas/minhas_rotas_screen.dart';
 import 'features/historico/historico_screen.dart';
+import 'features/perfil/perfil_screen.dart';
 import 'features/displacement/select_route_screen.dart';
 import 'features/displacement/start_trip_screen.dart';
 import 'features/displacement/in_transit_screen.dart';
@@ -19,6 +20,7 @@ class AppRoutes {
   static const registrar = '/registrar';
   static const iniciarDeslocamento = '/iniciar-deslocamento';
   static const emTransito = '/em-transito';
+  static const perfil = '/perfil';
 
   static Route<dynamic>? onGenerate(RouteSettings settings) {
     switch (settings.name) {
@@ -48,6 +50,9 @@ class AppRoutes {
 
       case emTransito:
         return MaterialPageRoute(builder: (_) => const InTransitScreen());
+
+      case perfil:
+        return MaterialPageRoute(builder: (_) => const PerfilScreen());
 
       default:
         return null;

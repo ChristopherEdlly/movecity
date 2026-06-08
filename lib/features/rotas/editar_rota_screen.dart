@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/mock/banco_mock.dart';
+import '../../core/repositories/deslocamento_repositorio.dart';
+import '../../core/repositories/rota_repositorio.dart';
 import '../../core/widgets/barra_navegacao.dart';
 
 class EditarRotaScreen extends StatefulWidget {
@@ -20,6 +23,11 @@ class _EditarRotaScreenState extends State<EditarRotaScreen> {
   final _observacoesController = TextEditingController();
 
   String _transporteSelecionado = 'Ônibus';
+  bool _salvando = false;
+  bool _excluindo = false;
+  int _quantidadeUsos = 0;
+
+  StreamSubscription<List<Deslocamento>>? _assinaturaDeslocamentos;
 
   final List<String> _opcoesTransporte = [
     'Ônibus', 'Carro', 'A pé', 'Moto', 'Bicicleta',
@@ -34,6 +42,13 @@ class _EditarRotaScreenState extends State<EditarRotaScreen> {
     _tempoController.text = '${widget.rota.tempoEstimadoMin}';
     _observacoesController.text = widget.rota.observacoes ?? '';
     _transporteSelecionado = widget.rota.transporte;
+
+    _assinaturaDeslocamentos = DeslocamentoRepositorio.buscarDeslocamentos(widget.rota.id).listen(
+      (lista) {
+        if (!mounted) return;
+        setState(() => _quantidadeUsos = lista.length);
+      },
+    );
   }
 
   @override
@@ -43,7 +58,67 @@ class _EditarRotaScreenState extends State<EditarRotaScreen> {
     _destinoController.dispose();
     _tempoController.dispose();
     _observacoesController.dispose();
+    _assinaturaDeslocamentos?.cancel();
     super.dispose();
+  }
+
+  Future<void> _salvarAlteracoes() async {
+    final nome = _nomeController.text.trim();
+    final origem = _origemController.text.trim();
+    final destino = _destinoController.text.trim();
+    final tempoTexto = _tempoController.text.trim();
+
+    if (nome.isEmpty || origem.isEmpty || destino.isEmpty || tempoTexto.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Preencha todos os campos obrigatórios.')),
+      );
+      return;
+    }
+
+    setState(() => _salvando = true);
+
+    final rotaAtualizada = Rota(
+      id: widget.rota.id,
+      usuarioId: widget.rota.usuarioId,
+      nome: nome,
+      origem: origem,
+      destino: destino,
+      tempoEstimadoMin: int.tryParse(tempoTexto) ?? widget.rota.tempoEstimadoMin,
+      transporte: _transporteSelecionado,
+      cor: widget.rota.cor,
+      observacoes: _observacoesController.text.trim().isEmpty
+          ? null
+          : _observacoesController.text.trim(),
+    );
+
+    try {
+      await RotaRepositorio.salvar(rotaAtualizada);
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Falha ao salvar alterações. Tente novamente.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _salvando = false);
+    }
+  }
+
+  Future<void> _excluirRota() async {
+    Navigator.pop(context); // fecha o dialog
+    setState(() => _excluindo = true);
+    try {
+      await RotaRepositorio.excluir(widget.rota.id);
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _excluindo = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Falha ao excluir rota. Tente novamente.')),
+        );
+      }
+    }
   }
 
   void _mostrarConfirmacaoExclusao() {
@@ -60,10 +135,7 @@ class _EditarRotaScreenState extends State<EditarRotaScreen> {
                 Container(
                   width: 64,
                   height: 64,
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    shape: BoxShape.circle,
-                  ),
+                  decoration: BoxDecoration(color: Colors.red.shade50, shape: BoxShape.circle),
                   child: const Icon(Icons.priority_high, color: Colors.red, size: 32),
                 ),
                 const SizedBox(height: 16),
@@ -79,7 +151,7 @@ class _EditarRotaScreenState extends State<EditarRotaScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    '${widget.rota.nome} · ${BancoMock.usosDaRota(widget.rota.id)} deslocamentos',
+                    '${widget.rota.nome} · $_quantidadeUsos deslocamentos',
                     style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                   ),
                 ),
@@ -93,10 +165,7 @@ class _EditarRotaScreenState extends State<EditarRotaScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.pop(context);
-                    },
+                    onPressed: _excluirRota,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -150,7 +219,7 @@ class _EditarRotaScreenState extends State<EditarRotaScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      '${BancoMock.usosDaRota(widget.rota.id)} usos registrados',
+                      '$_quantidadeUsos usos registrados',
                       style: const TextStyle(
                         fontSize: 12,
                         color: Color(0xFF3B6D11),
@@ -195,33 +264,51 @@ class _EditarRotaScreenState extends State<EditarRotaScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: (_salvando || _excluindo) ? null : _salvarAlteracoes,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF1D9E75),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: const Text(
-                        'Salvar alterações',
-                        style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
-                      ),
+                      child: _salvando
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                strokeWidth: 2.2,
+                              ),
+                            )
+                          : const Text(
+                              'Salvar alterações',
+                              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
-                      onPressed: _mostrarConfirmacaoExclusao,
+                      onPressed: (_salvando || _excluindo) ? null : _mostrarConfirmacaoExclusao,
                       style: OutlinedButton.styleFrom(
-                        backgroundColor: Colors.red.shade50,
+                        backgroundColor: _excluindo ? Colors.red.shade100 : Colors.red.shade50,
                         side: BorderSide.none,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: const Text(
-                        'Excluir rota',
-                        style: TextStyle(color: Colors.red, fontSize: 15, fontWeight: FontWeight.w600),
-                      ),
+                      child: _excluindo
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                                strokeWidth: 2.2,
+                              ),
+                            )
+                          : const Text(
+                              'Excluir rota',
+                              style: TextStyle(color: Colors.red, fontSize: 15, fontWeight: FontWeight.w600),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -311,14 +398,10 @@ class _EditarRotaScreenState extends State<EditarRotaScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: _transporteSelecionado == opcao
-                        ? const Color(0xFF1D9E75)
-                        : Colors.white,
+                    color: _transporteSelecionado == opcao ? const Color(0xFF1D9E75) : Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: _transporteSelecionado == opcao
-                          ? const Color(0xFF1D9E75)
-                          : const Color(0xFFDCDCDC),
+                      color: _transporteSelecionado == opcao ? const Color(0xFF1D9E75) : const Color(0xFFDCDCDC),
                     ),
                   ),
                   child: Text(

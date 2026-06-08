@@ -1,13 +1,75 @@
+import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../core/mock/banco_mock.dart';
+import '../../core/repositories/deslocamento_repositorio.dart';
+import '../../core/repositories/rota_repositorio.dart';
 import '../../core/widgets/barra_navegacao.dart';
 import '../displacement/select_route_screen.dart';
 import '../rotas/criar_rota_screen.dart';
 import '../rotas/editar_rota_screen.dart';
 import '../rotas/minhas_rotas_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  List<Rota> _rotas = [];
+  List<Deslocamento> _deslocamentos = [];
+  bool _carregando = true;
+
+  StreamSubscription<List<Rota>>? _assinaturaRotas;
+  StreamSubscription<List<Deslocamento>>? _assinaturaDeslocamentos;
+
+  @override
+  void initState() {
+    super.initState();
+    _ouvirRotas();
+  }
+
+  void _ouvirRotas() {
+    _assinaturaRotas = RotaRepositorio.buscarRotas(BancoMock.usuarioLogado.id).listen(
+      (rotas) {
+        if (!mounted) return;
+        setState(() {
+          _rotas = rotas;
+          _carregando = false;
+        });
+        _ouvirDeslocamentos(rotas.map((r) => r.id).toList());
+      },
+      onError: (_) {
+        if (!mounted) return;
+        setState(() => _carregando = false);
+      },
+    );
+  }
+
+  void _ouvirDeslocamentos(List<int> rotaIds) {
+    _assinaturaDeslocamentos?.cancel();
+    if (rotaIds.isEmpty) {
+      setState(() => _deslocamentos = []);
+      return;
+    }
+    _assinaturaDeslocamentos = DeslocamentoRepositorio.buscarDeslocamentosDoUsuario(rotaIds).listen(
+      (deslocamentos) {
+        if (!mounted) return;
+        setState(() => _deslocamentos = deslocamentos);
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _assinaturaRotas?.cancel();
+    _assinaturaDeslocamentos?.cancel();
+    super.dispose();
+  }
+
+  // ─── Helpers de data ──────────────────────────────────────────
 
   String get _saudacao {
     final hora = DateTime.now().hour;
@@ -29,12 +91,121 @@ class HomeScreen extends StatelessWidget {
     return '${diasSemana[agora.weekday % 7]}, ${agora.day} de ${meses[agora.month - 1]}';
   }
 
-  bool get _ehNovoUsuario => BancoMock.rotas.isEmpty;
-  String get _tituloRotas =>
-      BancoMock.totalDeslocamentosHoje > 0 ? 'Rotas recentes' : 'Suas rotas';
+  // Formato dd/MM/yyyy — padrão usado para salvar deslocamentos no Firestore
+  String get _dataHojeStr {
+    final agora = DateTime.now();
+    final dia = agora.day.toString().padLeft(2, '0');
+    final mes = agora.month.toString().padLeft(2, '0');
+    return '$dia/$mes/${agora.year}';
+  }
+
+  // ─── Computed a partir do Firestore ───────────────────────────
+
+  bool get _ehNovoUsuario => _rotas.isEmpty && !_carregando;
+
+  String get _tituloRotas => _totalDeslocamentosHoje > 0 ? 'Rotas recentes' : 'Suas rotas';
+
+  int get _totalDeslocamentosHoje {
+    final hoje = _dataHojeStr;
+    return _deslocamentos.where((d) => d.data == hoje).length;
+  }
+
+  String get _tempoTotalHojeFormatado {
+    final hoje = _dataHojeStr;
+    final deHoje = _deslocamentos.where((d) => d.data == hoje).toList();
+    if (deHoje.isEmpty) return '0 min';
+    int totalMin = 0;
+    for (final d in deHoje) {
+      final partesSaida = d.horarioSaida.split(':');
+      final partesChegada = d.horarioChegada.split(':');
+      final saidaMin = int.parse(partesSaida[0]) * 60 + int.parse(partesSaida[1]);
+      final chegadaMin = int.parse(partesChegada[0]) * 60 + int.parse(partesChegada[1]);
+      final diferenca = chegadaMin - saidaMin;
+      totalMin += diferenca < 0 ? diferenca + 24 * 60 : diferenca;
+    }
+    if (totalMin < 60) return '$totalMin min';
+    final h = totalMin ~/ 60;
+    final m = totalMin % 60;
+    return m == 0 ? '${h}h' : '${h}h ${m}min';
+  }
+
+  int get _diaAtualIndex => (DateTime.now().weekday - 1) % 7;
+
+  List<int> get _graficoSemana {
+    final hoje = DateTime.now();
+    final diaHoje = DateTime(hoje.year, hoje.month, hoje.day);
+    final inicioSemana = diaHoje.subtract(Duration(days: diaHoje.weekday - 1));
+    final contagem = List<int>.filled(7, 0);
+    for (final d in _deslocamentos) {
+      final partes = d.data.split('/');
+      if (partes.length != 3) continue;
+      final dia = int.tryParse(partes[0]);
+      final mes = int.tryParse(partes[1]);
+      final ano = int.tryParse(partes[2]);
+      if (dia == null || mes == null || ano == null) continue;
+      final dataDeslocamento = DateTime(ano, mes, dia);
+      final diffDias = dataDeslocamento.difference(inicioSemana).inDays;
+      if (diffDias < 0 || diffDias > 6) continue;
+      contagem[diffDias]++;
+    }
+    return contagem;
+  }
+
+  String _ultimoUsoDaRota(int rotaId) {
+    final lista = _deslocamentos.where((d) => d.rotaId == rotaId).toList();
+    if (lista.isEmpty) return '—';
+    return lista.last.data;
+  }
+
+  bool get _temHistorico => _deslocamentos.isNotEmpty;
+
+  Rota get _rotaSugerida {
+    if (_deslocamentos.isEmpty) return _rotas.first;
+    final contagem = <int, int>{};
+    for (final d in _deslocamentos) {
+      contagem[d.rotaId] = (contagem[d.rotaId] ?? 0) + 1;
+    }
+    final idMaisUsado = contagem.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+    try {
+      return _rotas.firstWhere((r) => r.id == idMaisUsado);
+    } catch (_) {
+      return _rotas.first;
+    }
+  }
+
+  String _saidaUsualDaRota(int rotaId) {
+    final lista = _deslocamentos.where((d) => d.rotaId == rotaId).toList();
+    if (lista.isEmpty) return '';
+    int totalMin = 0;
+    int count = 0;
+    for (final d in lista) {
+      try {
+        final partes = d.horarioSaida.split(':');
+        totalMin += int.parse(partes[0]) * 60 + int.parse(partes[1]);
+        count++;
+      } catch (_) {}
+    }
+    if (count == 0) return '';
+    final mediaMin = totalMin ~/ count;
+    final h = mediaMin ~/ 60;
+    final m = mediaMin % 60;
+    return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+  }
+
+  // ─── Build ────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
+    if (_carregando) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF3F3F2),
+        bottomNavigationBar: BarraNavegacao(indiceSelecionado: 0),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF1D9E75)),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF3F3F2),
       bottomNavigationBar: const BarraNavegacao(indiceSelecionado: 0),
@@ -45,8 +216,8 @@ class HomeScreen extends StatelessWidget {
             _buildCabecalho(),
             const SizedBox(height: 12),
             if (_ehNovoUsuario) ..._conteudoNovoUsuario(context),
-            if (!_ehNovoUsuario && BancoMock.sugestaoAtual != null) ..._conteudoComSugestao(context),
-            if (!_ehNovoUsuario && BancoMock.sugestaoAtual == null) ..._conteudoNormal(context),
+            if (!_ehNovoUsuario && _temHistorico) ..._conteudoComSugestao(context),
+            if (!_ehNovoUsuario && !_temHistorico) ..._conteudoNormal(context),
           ],
         ),
       ),
@@ -93,7 +264,7 @@ class HomeScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '$_saudacao, ${BancoMock.usuarioLogado.nome}!',
+            '$_saudacao, ${FirebaseAuth.instance.currentUser?.displayName ?? FirebaseAuth.instance.currentUser?.email?.split('@')[0] ?? 'Usuário'}!',
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 6),
@@ -105,11 +276,11 @@ class HomeScreen extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _buildCartaoEstatistica('Deslocamentos hoje', '${BancoMock.totalDeslocamentosHoje}'),
+                child: _buildCartaoEstatistica('Deslocamentos hoje', '$_totalDeslocamentosHoje'),
               ),
               const SizedBox(width: 14),
               Expanded(
-                child: _buildCartaoEstatistica('Tempo total hoje', BancoMock.tempoTotalHojeFormatado),
+                child: _buildCartaoEstatistica('Tempo total hoje', _tempoTotalHojeFormatado),
               ),
             ],
           ),
@@ -193,26 +364,13 @@ class HomeScreen extends StatelessWidget {
       ..._buildSecaoRotas(context),
       const SizedBox(height: 20),
       ..._buildGrafico(),
-      if (BancoMock.dicaAtual != null) ...[
-        const SizedBox(height: 12),
-        Container(
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: const Color(0xFFE9F3DE),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFA3CC59), width: 0.75),
-          ),
-          child: Text(BancoMock.dicaAtual!, style: const TextStyle(fontSize: 12, color: Color(0xFF3B6D11))),
-        ),
-      ] else
-        const SizedBox(height: 24),
+      const SizedBox(height: 24),
     ];
   }
 
   List<Widget> _conteudoComSugestao(BuildContext context) {
-    final sugestao = BancoMock.sugestaoAtual!;
-    final alerta = BancoMock.alertaAtual;
+    final rota = _rotaSugerida;
+    final saidaUsual = _saidaUsualDaRota(rota.id);
 
     return [
       Container(
@@ -241,10 +399,10 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(sugestao.rota, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(rota.nome, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
                   Text(
-                    '${sugestao.transporte} · ${sugestao.tempoEstimado} · Saída ideal: ${sugestao.saidaIdeal}',
+                    '${rota.transporte} · ~${rota.tempoEstimadoMin} min${saidaUsual.isNotEmpty ? ' · Saída usual: $saidaUsual' : ''}',
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
@@ -265,34 +423,6 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
-      if (alerta != null) ...[
-        const SizedBox(height: 12),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF3E0),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFFFB74D), width: 0.75),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('!  ', style: TextStyle(color: Color(0xFFCC6600), fontWeight: FontWeight.bold, fontSize: 13)),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(alerta.titulo, style: const TextStyle(color: Color(0xFFCC6600), fontWeight: FontWeight.w600, fontSize: 13)),
-                    const SizedBox(height: 2),
-                    Text(alerta.mensagem, style: const TextStyle(color: Color(0xFFCC6600), fontSize: 12)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
       const SizedBox(height: 20),
       ..._buildSecaoRotas(context),
       const SizedBox(height: 20),
@@ -351,7 +481,6 @@ class HomeScreen extends StatelessWidget {
   }
 
   List<Widget> _buildSecaoRotas(BuildContext context) {
-    final rotas = BancoMock.rotas;
     return [
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -368,9 +497,9 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
-      for (int i = 0; i < rotas.length; i++) ...[
+      for (int i = 0; i < _rotas.length; i++) ...[
         if (i > 0) const SizedBox(height: 8),
-        _buildCartaoRota(context, rotas[i]),
+        _buildCartaoRota(context, _rotas[i]),
       ],
     ];
   }
@@ -398,7 +527,7 @@ class HomeScreen extends StatelessWidget {
                 children: [
                   Text(rota.nome, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  Text(BancoMock.ultimoUsoDaRota(rota.id), style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                  Text(_ultimoUsoDaRota(rota.id), style: const TextStyle(fontSize: 11, color: Colors.grey)),
                 ],
               ),
             ),
@@ -410,7 +539,7 @@ class HomeScreen extends StatelessWidget {
   }
 
   List<Widget> _buildGrafico() {
-    final alturas = BancoMock.graficoSemana;
+    final alturas = _graficoSemana;
     if (alturas.isEmpty) return [];
 
     const dias = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
@@ -438,7 +567,7 @@ class HomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 for (int i = 0; i < 7; i++)
-                  _buildBarra(dias[i], alturas[i], maximo, i == BancoMock.diaAtualIndex),
+                  _buildBarra(dias[i], alturas[i], maximo, i == _diaAtualIndex),
               ],
             ),
             if (semDados) ...[
