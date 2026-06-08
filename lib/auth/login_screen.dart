@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:movecity/app_routes.dart';
+import 'package:movecity/core/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,7 +15,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
   bool _isLoading = false;
-
+  bool _mostrarSenha = false;
 
   final Color brandGreen = const Color(0xFF1D9E75);
 
@@ -38,10 +39,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
 
    
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$'); 
+    final emailRegex = RegExp(r'^[\w.-]+@souunit\.com\.br$'); 
     if (!emailRegex.hasMatch(_emailController.text.trim())) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, insira um e-mail válido.')),
+        const SnackBar(content: Text('Somente contas @souunit.com.br podem acessar o sistema.')),
       );
       return;
     }
@@ -51,14 +52,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
 
     try {
-      await Future.delayed(const Duration(seconds: 2));
+      await AuthService().login(
+        _emailController.text.trim(),
+        _senhaController.text.trim(),
+      );
       if (mounted) {
         Navigator.pushReplacementNamed(context, AppRoutes.home);
       }
-    } catch (e) {
+        } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Não foi possível fazer login. Tente novamente.')),
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+          ),
         );
       }
     } finally {
@@ -89,20 +95,62 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       'MOVE CITY',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.1, fontWeight: FontWeight.bold, color: Color(0xFF1D9E75)),
+                      style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.1, fontWeight: FontWeight.bold, color: brandGreen),
                     ),
                     SizedBox(
                       height: MediaQuery.of(context).size.height * 0.08,
                     ),
                     _buildTextField(controller: _emailController, hint: 'E-mail'),
                     const SizedBox(height: 16),
-                    _buildTextField(controller: _senhaController, hint: 'Senha', obscure: true),
+                    _buildTextField(
+                        controller: _senhaController,
+                        hint: 'Senha',
+                        obscure: !_mostrarSenha,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _mostrarSenha
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _mostrarSenha = !_mostrarSenha;
+                            });
+                          },
+                        ),
+                      ),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: _isLoading ? null : _fazerLogin,
                       style: ElevatedButton.styleFrom(backgroundColor: brandGreen, elevation: 10, shadowColor: Colors.black.withOpacity(0.07), padding: const EdgeInsets.symmetric(vertical: 22), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                       child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Login', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold,  fontSize: 15)),
                     ),
+
+                    const SizedBox(height: 16),
+
+                 OutlinedButton(
+                  onPressed: () {
+                    
+                  },
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 22),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    side: BorderSide(
+                      color: brandGreen,
+                      width: 2,
+                    ),
+                  ),
+                  child:  Text(
+                    'Login com Google',
+                    style: TextStyle(
+                      color: brandGreen,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
                     const SizedBox(height: 16),
                     GestureDetector(
                         onTap: () => Navigator.pushNamed(
@@ -139,12 +187,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
 
-  Widget _buildTextField({required TextEditingController controller, required String hint, bool obscure = false}) {
+  Widget _buildTextField({required TextEditingController controller, required String hint, bool obscure = false, Widget? suffixIcon,}) {
     return Container(
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.07), blurRadius: 10)]),
       child: TextField(controller: controller, obscureText: obscure, decoration: InputDecoration(hintText: hint,    hintStyle: const TextStyle(fontWeight:FontWeight.normal,
        fontSize: 14, color: Color(0xFF80807E),),                 
-      contentPadding: const EdgeInsets.all(22), border: InputBorder.none)),
+      contentPadding: const EdgeInsets.all(22), border: InputBorder.none, suffixIcon: suffixIcon)),
     );
   }
 }

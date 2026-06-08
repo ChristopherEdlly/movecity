@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:movecity/app_routes.dart';
+import 'package:movecity/core/services/auth_service.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -13,8 +15,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   int _paginaAtual = 0;
   final _emailController = TextEditingController();
-  final _novaSenhaController = TextEditingController();
-  final _confirmarSenhaController = TextEditingController();
+ 
   bool _isLoading = false;
 
 
@@ -24,45 +25,65 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Future<void> _proximaEtapa() async {
     
     if (_paginaAtual == 0) {
-      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+      final emailRegex = RegExp(r'^[\w.-]+@souunit\.com\.br$'); 
       if (_emailController.text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor, informe seu e-mail.')));
         return;
       }
       if (!emailRegex.hasMatch(_emailController.text.trim())) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor, insira um e-mail válido.')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Somente contas @souunit.com.br podem acessar o sistema.')));
         return;
       }
     }
 
 
     
-    if (_paginaAtual == 2) {
-      if (_novaSenhaController.text.trim().isEmpty || _confirmarSenhaController.text.trim().isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor, preencha todos os campos.')));
-        return;
-      }
-      if (_novaSenhaController.text.length < 6) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('A senha deve ter pelo menos 6 caracteres.')));
-        return;
-      }
-      if (_novaSenhaController.text != _confirmarSenhaController.text) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('As senhas não coincidem.')));
-        return;
-      }
-    }
+   
 
 
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 2));
-   
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-        _paginaAtual++;
-      });
-    }
-  }
+        try {
+          
+          await AuthService().enviarEmailRedefinicao(
+            _emailController.text.trim(),
+          );
+
+          if (mounted) {
+            setState(() {
+              _paginaAtual++;
+            });
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                e.toString().replaceFirst('Exception: ', ''),
+              ),
+            ),
+          );
+
+        } finally {
+          if (mounted) {
+            setState(() => _isLoading = false);
+          }
+        }
+      }
+
+      Future<void> _abrirEmail() async {
+            final Uri emailUri = Uri(
+              scheme: 'mailto',
+            );
+
+            if (await canLaunchUrl(emailUri)) {
+              await launchUrl(emailUri);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Não foi possível abrir o aplicativo de e-mail.'),
+                ),
+              );
+            }
+          }
 
 
   @override
@@ -87,10 +108,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       child: _paginaAtual == 0
                           ? TextButton(
                               onPressed: () => Navigator.pop(context),
-                              child: const Text(
+                              child:  Text(
                                 '‹ Voltar',
                                 style: TextStyle(
-                                  color: Color(0xFF1D9E75),
+                                  color: brandGreen,
                                   fontWeight: FontWeight.normal,
                                   fontSize: 16,
                                 ),
@@ -100,7 +121,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ),
                   ),
 
-                     Text('MOVE CITY', style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.1, fontWeight: FontWeight.bold, color: Color(0xFF1D9E75))),
+                     Text('MOVE CITY', style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.1, fontWeight: FontWeight.bold, color: brandGreen)),
                     _buildConteudo(),
                     
                   ],
@@ -140,31 +161,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           SizedBox(
                 height: MediaQuery.of(context).size.height * 0.08,
           ),
-          _buildBotao('Acessar e-mail', () => setState(() => _paginaAtual++)),
+          _buildBotao('Acessar e-mail', _abrirEmail),
         ]);
-      case 2:
-        return Column(children: [
-          SizedBox(
-            height: MediaQuery.of(context).size.height * 0.08,
-          ),
-          _buildTextField(controller: _novaSenhaController, hint: 'Digite a nova senha', obscure: true),
-          const SizedBox(height: 16),
-          _buildTextField(controller: _confirmarSenhaController, hint: 'Confirme a nova senha', obscure: true),
-          const SizedBox(height: 16),
-          _buildBotao('Redefinir senha', _proximaEtapa),
-        ]);
-      case 3:
-      default:
-        return Column(children: [
-          SizedBox(
-            height: MediaQuery.of(context).size.height * 0.08,
-          ),
-          const Text('Senha atualizada! Agora é só fazer login com sua nova senha.', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          SizedBox(
-              height: MediaQuery.of(context).size.height * 0.08,
-            ),
-          _buildBotao('Fazer login', () => Navigator.pop(context)),
-        ]);
+         default:
+            return const SizedBox();
     }
   }
  
