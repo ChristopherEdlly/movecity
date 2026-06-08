@@ -13,6 +13,7 @@ Aplicativo mobile para registro e acompanhamento de deslocamentos urbanos diári
 | Mütter Mendes Espósito Nunes | Fluxo de Deslocamento (Selecionar Rota → Iniciar Deslocamento → Em Trânsito) |
 | Arthur Jovino de Assis Pereira | Fluxo de Rotas (Minhas Rotas → Nova Rota → Editar Rota → Confirmar Exclusão) |
 | João Pedro de Araújo Martins Silva Lima | Fluxo de Histórico (Histórico → Detalhe do Deslocamento → Editar Deslocamento) |
+Vídeo: https://drive.google.com/file/d/1fg2AC8sFbXvlwkvmnAixMPVDX9R2N4hu/view?usp=sharing
 ---
 
 ## 📱 Protótipo
