@@ -5,8 +5,13 @@ import '../../core/widgets/barra_navegacao.dart';
 
 class EditarDeslocamentoScreen extends StatefulWidget {
   final Deslocamento entrada;
+  final String nomeRota;
 
-  const EditarDeslocamentoScreen({super.key, required this.entrada});
+  const EditarDeslocamentoScreen({
+    super.key,
+    required this.entrada,
+    required this.nomeRota,
+  });
 
   @override
   State<EditarDeslocamentoScreen> createState() => _EditarDeslocamentoScreenState();
@@ -380,7 +385,7 @@ class _EditarDeslocamentoScreenState extends State<EditarDeslocamentoScreen> {
         border: Border.all(color: const Color(0xFFDCDCDC)),
       ),
       child: Text(
-        BancoMock.rotaPorId(widget.entrada.rotaId).nome,
+        widget.nomeRota,
         style: const TextStyle(fontSize: 15, color: Color(0xFF808080)),
       ),
     );

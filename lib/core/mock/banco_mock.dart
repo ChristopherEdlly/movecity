@@ -35,7 +35,7 @@ class Usuario {
 
 class Rota {
   final int id;
-  final int usuarioId;
+  final String usuarioId;
   final String nome;
   final String origem;
   final String destino;
@@ -70,7 +70,7 @@ class Rota {
 
   factory Rota.fromMap(Map<String, dynamic> map) => Rota(
         id: (map['id'] as num).toInt(),
-        usuarioId: (map['usuarioId'] as num).toInt(),
+        usuarioId: map['usuarioId'] as String,
         nome: map['nome'] as String,
         origem: map['origem'] as String,
         destino: map['destino'] as String,
@@ -157,7 +157,7 @@ class BancoMock {
   static final List<Rota> rotas = [
     const Rota(
       id: 1,
-      usuarioId: 1,
+      usuarioId: 'mock',
       nome: 'Casa → IFS',
       origem: 'Rua das Flores, 10 — Aracaju',
       destino: 'IFS Aracaju — Av. Eng. Gentil Tavares',
@@ -168,7 +168,7 @@ class BancoMock {
     ),
     const Rota(
       id: 2,
-      usuarioId: 1,
+      usuarioId: 'mock',
       nome: 'IFS → Trabalho',
       origem: 'IFS Aracaju — Av. Eng. Gentil Tavares',
       destino: 'Centro Empresarial — Aracaju',
@@ -178,7 +178,7 @@ class BancoMock {
     ),
     const Rota(
       id: 3,
-      usuarioId: 1,
+      usuarioId: 'mock',
       nome: 'Casa → Shopping Jardins',
       origem: 'Rua das Flores, 10 — Aracaju',
       destino: 'Shopping Jardins — Aracaju',
@@ -188,7 +188,7 @@ class BancoMock {
     ),
     const Rota(
       id: 4,
-      usuarioId: 1,
+      usuarioId: 'mock',
       nome: 'Trabalho → Academia',
       origem: 'Centro Empresarial — Aracaju',
       destino: 'Academia SmartFit — Aracaju',
