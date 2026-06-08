@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../app_routes.dart';
+import '../../core/mock/banco_mock.dart';
+import '../../core/repositories/deslocamento_repositorio.dart';
 import '../../core/widgets/barra_navegacao.dart';
+import 'displacement_flow_args.dart';
 
 class StartTripScreen extends StatefulWidget {
-  const StartTripScreen({super.key});
+  final Rota rota;
+
+  const StartTripScreen({super.key, required this.rota});
 
   @override
   State<StartTripScreen> createState() => _StartTripScreenState();
@@ -16,11 +21,22 @@ class _StartTripScreenState extends State<StartTripScreen> {
 
   final TextEditingController _observacaoController = TextEditingController();
   final List<String> _opcoesTransporte = const [
-    'Ônibus', 'Carro', 'A pé', 'Moto', 'Bicicleta',
+    'Ônibus',
+    'Carro',
+    'A pé',
+    'Moto',
+    'Bicicleta',
   ];
 
   TimeOfDay _horarioSaida = TimeOfDay.now();
-  String _transporteSelecionado = 'Ônibus';
+  late String _transporteSelecionado;
+  bool _salvando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _transporteSelecionado = widget.rota.transporte;
+  }
 
   @override
   void dispose() {
@@ -78,7 +94,12 @@ class _StartTripScreenState extends State<StartTripScreen> {
     return Container(
       width: double.infinity,
       color: _verde,
-      padding: EdgeInsets.fromLTRB(4, MediaQuery.of(context).padding.top + 8, 20, 24),
+      padding: EdgeInsets.fromLTRB(
+        4,
+        MediaQuery.of(context).padding.top + 8,
+        20,
+        24,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -95,7 +116,11 @@ class _StartTripScreenState extends State<StartTripScreen> {
                 children: [
                   Text(
                     'Iniciar deslocamento',
-                    style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: Colors.white),
+                    style: TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
                   ),
                   SizedBox(height: 8),
                   Text(
@@ -116,9 +141,17 @@ class _StartTripScreenState extends State<StartTripScreen> {
       padding: EdgeInsets.symmetric(horizontal: 28),
       child: Row(
         children: [
-          _IndicadorPasso(numero: '✓', label: 'Rota', estado: _EstadoPasso.concluido),
+          _IndicadorPasso(
+            numero: '1',
+            label: 'Rota',
+            estado: _EstadoPasso.concluido,
+          ),
           Expanded(child: _DivisorPasso(ativo: true)),
-          _IndicadorPasso(numero: '2', label: 'Saída', estado: _EstadoPasso.ativo),
+          _IndicadorPasso(
+            numero: '2',
+            label: 'Saída',
+            estado: _EstadoPasso.ativo,
+          ),
           Expanded(child: _DivisorPasso()),
           _IndicadorPasso(numero: '3', label: 'Chegada'),
         ],
@@ -134,22 +167,29 @@ class _StartTripScreenState extends State<StartTripScreen> {
         borderRadius: BorderRadius.circular(11),
         border: Border.all(color: const Color(0xFFA3CC59), width: 1.2),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          CircleAvatar(radius: 7, backgroundColor: _verde),
-          SizedBox(width: 12),
+          CircleAvatar(radius: 7, backgroundColor: widget.rota.cor),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Casa → IFS',
-                  style: TextStyle(color: Color(0xFF13694F), fontSize: 16, fontWeight: FontWeight.w800),
+                  widget.rota.nome,
+                  style: const TextStyle(
+                    color: Color(0xFF13694F),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
-                  'Ônibus · ~35 min estimados',
-                  style: TextStyle(color: Color(0xFF3D785F), fontSize: 13),
+                  '${widget.rota.transporte} · ~${widget.rota.tempoEstimadoMin} min estimados',
+                  style: const TextStyle(
+                    color: Color(0xFF3D785F),
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -160,8 +200,7 @@ class _StartTripScreenState extends State<StartTripScreen> {
   }
 
   Widget _buildCampoHorario(BuildContext context) {
-    final horarioFormatado =
-        '${_horarioSaida.hour.toString().padLeft(2, '0')}:${_horarioSaida.minute.toString().padLeft(2, '0')}';
+    final horarioFormatado = _formatarHorario(_horarioSaida);
 
     return Material(
       color: Colors.transparent,
@@ -232,22 +271,36 @@ class _StartTripScreenState extends State<StartTripScreen> {
   }
 
   Widget _buildSeletorTransporte() {
+    final opcoes = [
+      if (!_opcoesTransporte.contains(_transporteSelecionado))
+        _transporteSelecionado,
+      ..._opcoesTransporte,
+    ];
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          for (final transporte in _opcoesTransporte)
+          for (final transporte in opcoes)
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: GestureDetector(
-                onTap: () => setState(() => _transporteSelecionado = transporte),
+                onTap: () =>
+                    setState(() => _transporteSelecionado = transporte),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: _transporteSelecionado == transporte ? _verde : Colors.white,
+                    color: _transporteSelecionado == transporte
+                        ? _verde
+                        : Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: _transporteSelecionado == transporte ? _verde : const Color(0xFFE0E0DD),
+                      color: _transporteSelecionado == transporte
+                          ? _verde
+                          : const Color(0xFFE0E0DD),
                     ),
                   ),
                   child: Text(
@@ -255,7 +308,9 @@ class _StartTripScreenState extends State<StartTripScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: _transporteSelecionado == transporte ? Colors.white : const Color(0xFF777777),
+                      color: _transporteSelecionado == transporte
+                          ? Colors.white
+                          : const Color(0xFF777777),
                     ),
                   ),
                 ),
@@ -276,7 +331,10 @@ class _StartTripScreenState extends State<StartTripScreen> {
         hintStyle: const TextStyle(color: Color(0xFFBBBBBB), fontSize: 14),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: Color(0xFFDCDCDC)),
@@ -294,26 +352,89 @@ class _StartTripScreenState extends State<StartTripScreen> {
       width: double.infinity,
       height: 48,
       child: ElevatedButton(
-        onPressed: () => Navigator.pushNamed(context, AppRoutes.emTransito),
+        onPressed: _salvando ? null : _confirmarSaida,
         style: ElevatedButton.styleFrom(
           backgroundColor: _verde,
           foregroundColor: Colors.white,
           elevation: 7,
           shadowColor: _verde.withValues(alpha: 0.28),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
-        child: const Text(
-          'Confirmar saída',
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
-        ),
+        child: _salvando
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  strokeWidth: 2.2,
+                ),
+              )
+            : const Text(
+                'Confirmar saída',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+              ),
       ),
     );
+  }
+
+  Future<void> _confirmarSaida() async {
+    final agora = DateTime.now();
+    final deslocamento = Deslocamento(
+      id: agora.millisecondsSinceEpoch,
+      rotaId: widget.rota.id,
+      data: _formatarData(agora),
+      horarioSaida: _formatarHorario(_horarioSaida),
+      horarioChegada: '',
+      transporte: _transporteSelecionado,
+      observacao: _observacaoController.text.trim(),
+    );
+
+    setState(() => _salvando = true);
+
+    try {
+      await DeslocamentoRepositorio.salvar(deslocamento);
+      if (!mounted) return;
+      Navigator.pushNamed(
+        context,
+        AppRoutes.emTransito,
+        arguments: EmTransitoArgs(
+          rota: widget.rota,
+          deslocamento: deslocamento,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Falha ao iniciar deslocamento. Tente novamente.'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _salvando = false);
+    }
+  }
+
+  String _formatarData(DateTime data) {
+    return '${data.day.toString().padLeft(2, '0')}/'
+        '${data.month.toString().padLeft(2, '0')}/'
+        '${data.year}';
+  }
+
+  String _formatarHorario(TimeOfDay horario) {
+    return '${horario.hour.toString().padLeft(2, '0')}:'
+        '${horario.minute.toString().padLeft(2, '0')}';
   }
 
   Widget _buildLabel(String texto) {
     return Text(
       texto,
-      style: const TextStyle(color: Color(0xFF777777), fontSize: 13, fontWeight: FontWeight.w600),
+      style: const TextStyle(
+        color: Color(0xFF777777),
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+      ),
     );
   }
 }
@@ -335,7 +456,8 @@ class _IndicadorPasso extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ativo = estado == _EstadoPasso.ativo || estado == _EstadoPasso.concluido;
+    final ativo =
+        estado == _EstadoPasso.ativo || estado == _EstadoPasso.concluido;
     final cor = ativo ? _verde : const Color(0xFFCFCFCF);
 
     return Column(
@@ -347,7 +469,11 @@ class _IndicadorPasso extends StatelessWidget {
           decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
           child: Text(
             numero,
-            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ),
         const SizedBox(height: 9),

@@ -14,9 +14,10 @@ class RotaRepositorio {
   // ─── Conversão ────────────────────────────────────────────────
 
   static Map<String, dynamic> _paraMapa(Rota rota) {
+    final usuario = FirebaseAuth.instance.currentUser;
     return {
-      'usuarioId': rota.usuarioId,
-      'criado_por': FirebaseAuth.instance.currentUser?.email ?? '',
+      'usuarioId': usuario?.uid ?? rota.usuarioId,
+      'criado_por': usuario?.email ?? '',
       'nome': rota.nome,
       'origem': rota.origem,
       'destino': rota.destino,
@@ -30,13 +31,13 @@ class RotaRepositorio {
   static Rota _deMapa(Map<String, dynamic> mapa, String docId) {
     return Rota(
       id: int.tryParse(docId) ?? 0,
-      usuarioId: mapa['usuarioId'] as String,
+      usuarioId: mapa['usuarioId'] as String? ?? '',
       nome: mapa['nome'] ?? '',
       origem: mapa['origem'] ?? '',
       destino: mapa['destino'] ?? '',
-      tempoEstimadoMin: (mapa['tempoEstimadoMin'] as num).toInt(),
+      tempoEstimadoMin: (mapa['tempoEstimadoMin'] as num?)?.toInt() ?? 0,
       transporte: mapa['transporte'] ?? '',
-      cor: Color((mapa['cor'] as num).toInt()),
+      cor: Color((mapa['cor'] as num?)?.toInt() ?? 0xFF1D9E75),
       observacoes: mapa['observacoes'],
     );
   }
@@ -49,16 +50,21 @@ class RotaRepositorio {
         .collection(_colecao)
         .where('usuarioId', isEqualTo: usuarioId)
         .snapshots()
-        .map((snap) => snap.docs.map((doc) => _deMapa(doc.data(), doc.id)).toList());
+        .map(
+          (snap) =>
+              snap.docs.map((doc) => _deMapa(doc.data(), doc.id)).toList(),
+        );
   }
 
   // ─── Escrita ──────────────────────────────────────────────────
 
   static Future<void> salvar(Rota rota) async {
-    await _db
-        .collection(_colecao)
-        .doc(rota.id.toString())
-        .set(_paraMapa(rota));
+    final usuario = FirebaseAuth.instance.currentUser;
+    if (usuario == null) {
+      throw StateError('Nenhum usuario logado para salvar rota.');
+    }
+
+    await _db.collection(_colecao).doc(rota.id.toString()).set(_paraMapa(rota));
   }
 
   static Future<void> excluir(int rotaId) async {

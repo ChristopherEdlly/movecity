@@ -1,6 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../app_routes.dart';
 import '../../core/mock/banco_mock.dart';
+import '../../core/repositories/rota_repositorio.dart';
 import '../../core/widgets/barra_navegacao.dart';
 
 class SelectRouteScreen extends StatefulWidget {
@@ -15,7 +17,7 @@ class _SelectRouteScreenState extends State<SelectRouteScreen> {
   static const Color _fundo = Color(0xFFF3F3F2);
 
   final TextEditingController _buscaController = TextEditingController();
-  int _indiceRotaSelecionada = 0;
+  Rota? _rotaSelecionada;
   String _termoBusca = '';
 
   @override
@@ -24,24 +26,19 @@ class _SelectRouteScreenState extends State<SelectRouteScreen> {
     super.dispose();
   }
 
-  List<_RotaIndexada> get _rotasFiltradas {
+  List<Rota> _filtrarRotas(List<Rota> rotas) {
     if (_termoBusca.trim().isEmpty) {
-      return [
-        for (var i = 0; i < BancoMock.rotas.length; i++)
-          _RotaIndexada(index: i, rota: BancoMock.rotas[i]),
-      ];
+      return rotas;
     }
     final termo = _termoBusca.toLowerCase();
-    return [
-      for (var i = 0; i < BancoMock.rotas.length; i++)
-        if (BancoMock.rotas[i].nome.toLowerCase().contains(termo))
-          _RotaIndexada(index: i, rota: BancoMock.rotas[i]),
-    ];
+    return rotas
+        .where((rota) => rota.nome.toLowerCase().contains(termo))
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final rotasFiltradas = _rotasFiltradas;
+    final usuario = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
       backgroundColor: _fundo,
@@ -61,21 +58,73 @@ class _SelectRouteScreenState extends State<SelectRouteScreen> {
                   const SizedBox(height: 22),
                   const Text(
                     'Suas rotas',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF202221)),
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF202221),
+                    ),
                   ),
                   const SizedBox(height: 12),
-                  if (rotasFiltradas.isEmpty)
-                    _buildEstadoVazio()
+                  if (usuario == null)
+                    _buildEstadoVazio(
+                      'Entre na sua conta para carregar suas rotas.',
+                    )
                   else
-                    ...rotasFiltradas.map(
-                      (item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _CartaoRota(
-                          rota: item.rota,
-                          selecionado: item.index == _indiceRotaSelecionada,
-                          aoTocar: () => setState(() => _indiceRotaSelecionada = item.index),
-                        ),
-                      ),
+                    StreamBuilder<List<Rota>>(
+                      stream: RotaRepositorio.buscarRotas(usuario.uid),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                                ConnectionState.waiting &&
+                            !snapshot.hasData) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 24),
+                              child: CircularProgressIndicator(color: _verde),
+                            ),
+                          );
+                        }
+
+                        if (snapshot.hasError) {
+                          return _buildEstadoVazio(
+                            'Não foi possível carregar suas rotas.',
+                          );
+                        }
+
+                        final rotasFiltradas = _filtrarRotas(
+                          snapshot.data ?? [],
+                        );
+                        if (rotasFiltradas.isEmpty) {
+                          return _buildEstadoVazio();
+                        }
+
+                        if (_rotaSelecionada == null ||
+                            !rotasFiltradas.any(
+                              (rota) => rota.id == _rotaSelecionada!.id,
+                            )) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted && rotasFiltradas.isNotEmpty) {
+                              setState(
+                                () => _rotaSelecionada = rotasFiltradas.first,
+                              );
+                            }
+                          });
+                        }
+
+                        return Column(
+                          children: [
+                            for (final rota in rotasFiltradas)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: _CartaoRota(
+                                  rota: rota,
+                                  selecionado: rota.id == _rotaSelecionada?.id,
+                                  aoTocar: () =>
+                                      setState(() => _rotaSelecionada = rota),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
                     ),
                 ],
               ),
@@ -90,18 +139,29 @@ class _SelectRouteScreenState extends State<SelectRouteScreen> {
           width: double.infinity,
           height: 54,
           child: ElevatedButton(
-            onPressed: () => Navigator.pushNamed(context, AppRoutes.iniciarDeslocamento),
+            onPressed: _rotaSelecionada == null
+                ? null
+                : () => Navigator.pushNamed(
+                    context,
+                    AppRoutes.iniciarDeslocamento,
+                    arguments: _rotaSelecionada,
+                  ),
             style: ElevatedButton.styleFrom(
               backgroundColor: _verde,
               foregroundColor: Colors.white,
               elevation: 8,
               shadowColor: _verde.withValues(alpha: 0.28),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
             ),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Confirmar rota', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                Text(
+                  'Confirmar rota',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                ),
                 SizedBox(width: 8),
                 Icon(Icons.arrow_forward, size: 20),
               ],
@@ -115,7 +175,12 @@ class _SelectRouteScreenState extends State<SelectRouteScreen> {
   Widget _buildCabecalho(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(8, MediaQuery.of(context).padding.top + 8, 20, 24),
+      padding: EdgeInsets.fromLTRB(
+        8,
+        MediaQuery.of(context).padding.top + 8,
+        20,
+        24,
+      ),
       decoration: const BoxDecoration(
         color: _verde,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
@@ -136,7 +201,11 @@ class _SelectRouteScreenState extends State<SelectRouteScreen> {
                 children: [
                   Text(
                     'Iniciar deslocamento',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white),
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
                   ),
                   SizedBox(height: 6),
                   Text(
@@ -190,7 +259,7 @@ class _SelectRouteScreenState extends State<SelectRouteScreen> {
     );
   }
 
-  Widget _buildEstadoVazio() {
+  Widget _buildEstadoVazio([String mensagem = 'Nenhuma rota encontrada']) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       decoration: BoxDecoration(
@@ -198,10 +267,10 @@ class _SelectRouteScreenState extends State<SelectRouteScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE6E6E3)),
       ),
-      child: const Center(
+      child: Center(
         child: Text(
-          'Nenhuma rota encontrada',
-          style: TextStyle(color: Color(0xFF777777), fontSize: 13),
+          mensagem,
+          style: const TextStyle(color: Color(0xFF777777), fontSize: 13),
         ),
       ),
     );
@@ -250,7 +319,10 @@ class _CartaoRota extends StatelessWidget {
               Container(
                 width: 14,
                 height: 14,
-                decoration: BoxDecoration(color: rota.cor, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: rota.cor,
+                  shape: BoxShape.circle,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -270,7 +342,10 @@ class _CartaoRota extends StatelessWidget {
                     const SizedBox(height: 5),
                     Text(
                       '${rota.transporte} · ~${rota.tempoEstimadoMin} min',
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF7A7A7A)),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF7A7A7A),
+                      ),
                     ),
                   ],
                 ),
@@ -279,9 +354,9 @@ class _CartaoRota extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
-                    '${BancoMock.usosDaRota(rota.id)} usos',
-                    style: const TextStyle(
+                  const Text(
+                    'Rota',
+                    style: TextStyle(
                       fontSize: 12,
                       color: Color(0xFF777777),
                       fontWeight: FontWeight.w600,
@@ -319,7 +394,11 @@ class _IndicadorPasso extends StatelessWidget {
   final String label;
   final bool ativo;
 
-  const _IndicadorPasso({required this.numero, required this.label, this.ativo = false});
+  const _IndicadorPasso({
+    required this.numero,
+    required this.label,
+    this.ativo = false,
+  });
 
   static const Color _verde = Color(0xFF1D9E75);
 
@@ -372,11 +451,4 @@ class _DivisorPasso extends StatelessWidget {
       color: const Color(0xFFD8D8D6),
     );
   }
-}
-
-class _RotaIndexada {
-  final int index;
-  final Rota rota;
-
-  const _RotaIndexada({required this.index, required this.rota});
 }

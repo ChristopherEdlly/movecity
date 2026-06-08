@@ -124,10 +124,11 @@ class _HomeScreenState extends State<HomeScreen> {
     if (deHoje.isEmpty) return '0 min';
     int totalMin = 0;
     for (final d in deHoje) {
-      final partesSaida = d.horarioSaida.split(':');
-      final partesChegada = d.horarioChegada.split(':');
-      final saidaMin = int.parse(partesSaida[0]) * 60 + int.parse(partesSaida[1]);
-      final chegadaMin = int.parse(partesChegada[0]) * 60 + int.parse(partesChegada[1]);
+      final saidaMin = _horarioParaMinutos(d.horarioSaida);
+      final chegadaMin = _horarioParaMinutos(d.horarioChegada);
+
+      if (saidaMin == null || chegadaMin == null) continue;
+
       final diferenca = chegadaMin - saidaMin;
       totalMin += diferenca < 0 ? diferenca + 24 * 60 : diferenca;
     }
@@ -135,6 +136,19 @@ class _HomeScreenState extends State<HomeScreen> {
     final h = totalMin ~/ 60;
     final m = totalMin % 60;
     return m == 0 ? '${h}h' : '${h}h ${m}min';
+  }
+
+  int? _horarioParaMinutos(String horario) {
+    final partes = horario.split(':');
+    if (partes.length != 2) return null;
+
+    final hora = int.tryParse(partes[0]);
+    final minuto = int.tryParse(partes[1]);
+
+    if (hora == null || minuto == null) return null;
+    if (hora < 0 || hora > 23 || minuto < 0 || minuto > 59) return null;
+
+    return hora * 60 + minuto;
   }
 
   int get _diaAtualIndex => (DateTime.now().weekday - 1) % 7;

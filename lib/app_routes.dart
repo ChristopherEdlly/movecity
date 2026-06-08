@@ -6,6 +6,8 @@ import 'features/perfil/perfil_screen.dart';
 import 'features/displacement/select_route_screen.dart';
 import 'features/displacement/start_trip_screen.dart';
 import 'features/displacement/in_transit_screen.dart';
+import 'features/displacement/displacement_flow_args.dart';
+import 'core/mock/banco_mock.dart';
 import 'auth/login_screen.dart';
 import 'auth/register_screen.dart';
 import 'auth/forgot_password_screen.dart';
@@ -46,10 +48,23 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const SelectRouteScreen());
 
       case iniciarDeslocamento:
-        return MaterialPageRoute(builder: (_) => const StartTripScreen());
+        final rota = settings.arguments;
+        if (rota is Rota) {
+          return MaterialPageRoute(builder: (_) => StartTripScreen(rota: rota));
+        }
+        return MaterialPageRoute(builder: (_) => const SelectRouteScreen());
 
       case emTransito:
-        return MaterialPageRoute(builder: (_) => const InTransitScreen());
+        final args = settings.arguments;
+        if (args is EmTransitoArgs) {
+          return MaterialPageRoute(
+            builder: (_) => InTransitScreen(
+              rota: args.rota,
+              deslocamento: args.deslocamento,
+            ),
+          );
+        }
+        return MaterialPageRoute(builder: (_) => const SelectRouteScreen());
 
       case perfil:
         return MaterialPageRoute(builder: (_) => const PerfilScreen());
