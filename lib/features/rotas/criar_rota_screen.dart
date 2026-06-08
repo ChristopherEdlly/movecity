@@ -1,6 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../core/mock/banco_mock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../core/mock/banco_mock.dart';
 import '../../core/repositories/rota_repositorio.dart';
 import '../../core/widgets/barra_navegacao.dart';
 
@@ -52,7 +53,7 @@ class _CriarRotaScreenState extends State<CriarRotaScreen> {
 
     final novaRota = Rota(
       id: DateTime.now().millisecondsSinceEpoch,
-      usuarioId: BancoMock.usuarioLogado.id,
+      usuarioId: FirebaseAuth.instance.currentUser!.uid,
       nome: nome,
       origem: origem,
       destino: destino,

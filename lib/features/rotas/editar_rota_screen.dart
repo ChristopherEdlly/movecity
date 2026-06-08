@@ -338,9 +338,24 @@ class _EditarRotaScreenState extends State<EditarRotaScreen> {
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.chevron_left, color: Colors.white, size: 28),
           ),
-          const Text(
-            'Editar rota',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+          const Expanded(
+            child: Text(
+              'Editar rota',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+          ),
+          IconButton(
+            onPressed: (_salvando || _excluindo) ? null : _mostrarConfirmacaoExclusao,
+            icon: _excluindo
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      strokeWidth: 2.2,
+                    ),
+                  )
+                : const Icon(Icons.delete_outline, color: Colors.white, size: 24),
           ),
         ],
       ),

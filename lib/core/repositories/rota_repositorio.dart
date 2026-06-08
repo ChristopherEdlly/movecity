@@ -28,7 +28,7 @@ class RotaRepositorio {
   static Rota _deMapa(Map<String, dynamic> mapa, String docId) {
     return Rota(
       id: int.tryParse(docId) ?? 0,
-      usuarioId: (mapa['usuarioId'] as num).toInt(),
+      usuarioId: mapa['usuarioId'] as String,
       nome: mapa['nome'] ?? '',
       origem: mapa['origem'] ?? '',
       destino: mapa['destino'] ?? '',
@@ -42,7 +42,7 @@ class RotaRepositorio {
   // ─── Leitura ──────────────────────────────────────────────────
 
   // Retorna uma stream que atualiza automaticamente quando o Firestore mudar.
-  static Stream<List<Rota>> buscarRotas(int usuarioId) {
+  static Stream<List<Rota>> buscarRotas(String usuarioId) {
     return _db
         .collection(_colecao)
         .where('usuarioId', isEqualTo: usuarioId)

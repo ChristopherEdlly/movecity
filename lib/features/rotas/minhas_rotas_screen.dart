@@ -1,6 +1,7 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/mock/banco_mock.dart';
+import 'package:flutter/material.dart';
 import '../../core/repositories/deslocamento_repositorio.dart';
 import '../../core/repositories/rota_repositorio.dart';
 import '../../core/widgets/barra_navegacao.dart';
@@ -32,7 +33,7 @@ class _MinhasRotasScreenState extends State<MinhasRotasScreen> {
   }
 
   void _ouvirRotas() {
-    _assinaturaRotas = RotaRepositorio.buscarRotas(BancoMock.usuarioLogado.id).listen(
+    _assinaturaRotas = RotaRepositorio.buscarRotas(FirebaseAuth.instance.currentUser!.uid).listen(
       (rotas) {
         if (!mounted) return;
         setState(() {
@@ -177,7 +178,7 @@ class _MinhasRotasScreenState extends State<MinhasRotasScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            '${_rotas.length} rotas cadastradas',
+            '${_rotas.length} ${_rotas.length == 1 ? 'rota cadastrada' : 'rotas cadastradas'}',
             style: const TextStyle(fontSize: 13, color: Color(0xFFC7F0DF)),
           ),
         ],
