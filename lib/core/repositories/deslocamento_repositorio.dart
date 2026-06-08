@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../mock/banco_mock.dart';
 
 // Repositório de Deslocamentos — faz a ponte entre o app e o Firestore.
@@ -14,6 +15,7 @@ class DeslocamentoRepositorio {
   static Map<String, dynamic> _paraMapa(Deslocamento d) {
     return {
       'rotaId': d.rotaId,
+      'criado_por': FirebaseAuth.instance.currentUser?.email ?? '',
       'data': d.data,
       'horarioSaida': d.horarioSaida,
       'horarioChegada': d.horarioChegada,
