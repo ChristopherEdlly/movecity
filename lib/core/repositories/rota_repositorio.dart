@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../mock/banco_mock.dart';
 
@@ -15,6 +16,7 @@ class RotaRepositorio {
   static Map<String, dynamic> _paraMapa(Rota rota) {
     return {
       'usuarioId': rota.usuarioId,
+      'criado_por': FirebaseAuth.instance.currentUser?.email ?? '',
       'nome': rota.nome,
       'origem': rota.origem,
       'destino': rota.destino,
