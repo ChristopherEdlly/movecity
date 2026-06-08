@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/mock/banco_mock.dart';
-import '../../core/services/deslocamento_service.dart';
+import '../../core/repositories/deslocamento_repositorio.dart';
+import '../../core/repositories/rota_repositorio.dart';
 import '../../core/widgets/barra_navegacao.dart';
 import 'editar_deslocamento_screen.dart';
 
@@ -12,7 +14,115 @@ class HistoricoScreen extends StatefulWidget {
 }
 
 class _HistoricoScreenState extends State<HistoricoScreen> {
-  final _service = DeslocamentoService();
+  List<Rota> _rotas = [];
+  List<Deslocamento> _deslocamentos = [];
+  bool _carregando = true;
+
+  DateTime? _dataInicio;
+  DateTime? _dataFim;
+
+  StreamSubscription<List<Rota>>? _assinaturaRotas;
+  StreamSubscription<List<Deslocamento>>? _assinaturaDeslocamentos;
+
+  @override
+  void initState() {
+    super.initState();
+    _ouvirRotas();
+  }
+
+  void _ouvirRotas() {
+    _assinaturaRotas = RotaRepositorio.buscarRotas(BancoMock.usuarioLogado.id).listen(
+      (rotas) {
+        if (!mounted) return;
+        setState(() {
+          _rotas = rotas;
+          _carregando = false;
+        });
+        _ouvirDeslocamentos(rotas.map((r) => r.id).toList());
+      },
+      onError: (_) {
+        if (!mounted) return;
+        setState(() => _carregando = false);
+      },
+    );
+  }
+
+  void _ouvirDeslocamentos(List<int> rotaIds) {
+    _assinaturaDeslocamentos?.cancel();
+    if (rotaIds.isEmpty) {
+      setState(() => _deslocamentos = []);
+      return;
+    }
+    _assinaturaDeslocamentos = DeslocamentoRepositorio.buscarDeslocamentosDoUsuario(rotaIds).listen(
+      (deslocamentos) {
+        if (!mounted) return;
+        setState(() => _deslocamentos = deslocamentos);
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _assinaturaRotas?.cancel();
+    _assinaturaDeslocamentos?.cancel();
+    super.dispose();
+  }
+
+  // ─── Filtro de data ───────────────────────────────────────────
+
+  List<Deslocamento> get _deslocamentosFiltrados {
+    if (_dataInicio == null || _dataFim == null) return _deslocamentos;
+    return _deslocamentos.where((d) {
+      try {
+        final partes = d.data.split('/');
+        final data = DateTime(
+          int.parse(partes[2]),
+          int.parse(partes[1]),
+          int.parse(partes[0]),
+        );
+        return !data.isBefore(_dataInicio!) && !data.isAfter(_dataFim!);
+      } catch (_) {
+        return true;
+      }
+    }).toList();
+  }
+
+  String get _textoFiltroData {
+    if (_dataInicio == null || _dataFim == null) return 'Filtrar por data';
+    String f(DateTime d) =>
+        '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+    return '${f(_dataInicio!)}  →  ${f(_dataFim!)}';
+  }
+
+  Future<void> _abrirFiltroData() async {
+    final resultado = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      initialDateRange: _dataInicio != null && _dataFim != null
+          ? DateTimeRange(start: _dataInicio!, end: _dataFim!)
+          : null,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF1D9E75),
+              onPrimary: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (resultado != null && mounted) {
+      setState(() {
+        _dataInicio = resultado.start;
+        _dataFim = resultado.end;
+      });
+    }
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────
 
   String get _mesAno {
     final agora = DateTime.now();
@@ -23,8 +133,69 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
     return '${meses[agora.month - 1]} de ${agora.year}';
   }
 
+  String _calcularDuracao(Deslocamento d) {
+    try {
+      final partesSaida = d.horarioSaida.split(':');
+      final partesChegada = d.horarioChegada.split(':');
+      final saidaMin = int.parse(partesSaida[0]) * 60 + int.parse(partesSaida[1]);
+      final chegadaMin = int.parse(partesChegada[0]) * 60 + int.parse(partesChegada[1]);
+      var diff = chegadaMin - saidaMin;
+      if (diff < 0) diff += 24 * 60;
+      if (diff < 60) return '${diff}min';
+      final h = diff ~/ 60;
+      final m = diff % 60;
+      return m == 0 ? '${h}h' : '${h}h${m}min';
+    } catch (_) {
+      return '—';
+    }
+  }
+
+  String get _tempoTotalFormatado {
+    int totalMin = 0;
+    for (final d in _deslocamentosFiltrados) {
+      try {
+        final partesSaida = d.horarioSaida.split(':');
+        final partesChegada = d.horarioChegada.split(':');
+        final saidaMin = int.parse(partesSaida[0]) * 60 + int.parse(partesSaida[1]);
+        final chegadaMin = int.parse(partesChegada[0]) * 60 + int.parse(partesChegada[1]);
+        var diff = chegadaMin - saidaMin;
+        if (diff < 0) diff += 24 * 60;
+        totalMin += diff;
+      } catch (_) {}
+    }
+    if (totalMin == 0) return '0 min';
+    if (totalMin < 60) return '$totalMin min';
+    final h = totalMin ~/ 60;
+    final m = totalMin % 60;
+    return m == 0 ? '${h}h' : '${h}h ${m}min';
+  }
+
+  String get _rotaPrincipal {
+    if (_deslocamentosFiltrados.isEmpty || _rotas.isEmpty) return '—';
+    final contagem = <int, int>{};
+    for (final d in _deslocamentosFiltrados) {
+      contagem[d.rotaId] = (contagem[d.rotaId] ?? 0) + 1;
+    }
+    final idMaisUsado = contagem.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+    try {
+      return _rotas.firstWhere((r) => r.id == idMaisUsado).nome;
+    } catch (_) {
+      return '—';
+    }
+  }
+
+  // ─── Build ────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
+    if (_carregando) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        bottomNavigationBar: BarraNavegacao(indiceSelecionado: 3),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFF1D9E75))),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       bottomNavigationBar: const BarraNavegacao(indiceSelecionado: 3),
@@ -37,44 +208,28 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              child: StreamBuilder<List<Deslocamento>>(
-                stream: _service.listarDeslocamentos(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (snapshot.hasError) {
-                    return const Center(
-                      child: Text('Erro ao carregar deslocamentos.'),
-                    );
-                  }
-
-                  final deslocamentos = snapshot.data ?? [];
-
-                  return Column(
-                    children: [
-                      const SizedBox(height: 16),
-                      _buildFiltroData(),
-                      const SizedBox(height: 16),
-                      _buildCartoesResumo(deslocamentos.length),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: deslocamentos.isEmpty
-                            ? const Center(
-                                child: Text(
-                                  'Nenhum deslocamento encontrado.',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              )
-                            : _ListaHistorico(deslocamentos: deslocamentos),
-                      ),
-                    ],
-                  );
-                },
+              child: Column(
+                children: [
+                  const SizedBox(height: 16),
+                  _buildFiltroData(),
+                  const SizedBox(height: 16),
+                  _buildCartoesResumo(),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: _deslocamentosFiltrados.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'Nenhum deslocamento encontrado.',
+                              style: TextStyle(fontSize: 14, color: Colors.grey),
+                            ),
+                          )
+                        : _ListaHistorico(
+                            deslocamentos: _deslocamentosFiltrados,
+                            rotas: _rotas,
+                            calcularDuracao: _calcularDuracao,
+                          ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -109,52 +264,81 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
   }
 
   Widget _buildFiltroData() {
+    final temFiltro = _dataInicio != null && _dataFim != null;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.calendar_today_outlined, color: Colors.black54),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                '01/03/2026  →  30/03/2026',
-                style: TextStyle(fontSize: 14, color: Colors.black87),
+      child: GestureDetector(
+        onTap: _abrirFiltroData,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.calendar_today_outlined,
+                color: temFiltro ? const Color(0xFF1D9E75) : Colors.black54,
               ),
-            ),
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: const [
-                  BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2)),
-                ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  _textoFiltroData,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: temFiltro ? Colors.black87 : Colors.black45,
+                  ),
+                ),
               ),
-              child: const Icon(Icons.close, size: 18, color: Colors.black54),
-            ),
-          ],
+              GestureDetector(
+                onTap: temFiltro
+                    ? () => setState(() {
+                          _dataInicio = null;
+                          _dataFim = null;
+                        })
+                    : _abrirFiltroData,
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: const [
+                      BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2)),
+                    ],
+                  ),
+                  child: Icon(
+                    temFiltro ? Icons.close : Icons.tune,
+                    size: 18,
+                    color: Colors.black54,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildCartoesResumo(int totalDeslocamentos) {
+  Widget _buildCartoesResumo() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          Expanded(child: _CartaoResumo(label: 'Deslocamentos', valor: '$totalDeslocamentos')),
+          Expanded(
+            child: _CartaoResumo(label: 'Deslocamentos', valor: '${_deslocamentosFiltrados.length}'),
+          ),
           const SizedBox(width: 12),
-          Expanded(child: _CartaoResumo(label: 'Tempo total', valor: '22h')),
+          Expanded(
+            child: _CartaoResumo(label: 'Tempo total', valor: _tempoTotalFormatado),
+          ),
           const SizedBox(width: 12),
-          Expanded(child: _CartaoResumo(label: 'Rota principal', valor: 'Casa → IFS')),
+          Expanded(
+            child: _CartaoResumo(label: 'Rota principal', valor: _rotaPrincipal),
+          ),
         ],
       ),
     );
@@ -192,8 +376,14 @@ class _CartaoResumo extends StatelessWidget {
 
 class _ListaHistorico extends StatelessWidget {
   final List<Deslocamento> deslocamentos;
+  final List<Rota> rotas;
+  final String Function(Deslocamento) calcularDuracao;
 
-  const _ListaHistorico({required this.deslocamentos});
+  const _ListaHistorico({
+    required this.deslocamentos,
+    required this.rotas,
+    required this.calcularDuracao,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -201,18 +391,40 @@ class _ListaHistorico extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       itemCount: deslocamentos.length,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (context, index) => _CartaoHistorico(entrada: deslocamentos[index]),
+      itemBuilder: (context, index) {
+        final d = deslocamentos[index];
+        Rota? rota;
+        try {
+          rota = rotas.firstWhere((r) => r.id == d.rotaId);
+        } catch (_) {
+          rota = null;
+        }
+        return _CartaoHistorico(
+          entrada: d,
+          rota: rota,
+          duracao: calcularDuracao(d),
+        );
+      },
     );
   }
 }
 
 class _CartaoHistorico extends StatelessWidget {
   final Deslocamento entrada;
+  final Rota? rota;
+  final String duracao;
 
-  const _CartaoHistorico({required this.entrada});
+  const _CartaoHistorico({
+    required this.entrada,
+    required this.rota,
+    required this.duracao,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final Color cor = rota?.cor ?? Colors.grey;
+    final String nomeRota = rota?.nome ?? '—';
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -239,7 +451,7 @@ class _CartaoHistorico extends StatelessWidget {
               height: 12,
               margin: const EdgeInsets.only(top: 6),
               decoration: BoxDecoration(
-                color: BancoMock.rotaPorId(entrada.rotaId).cor,
+                color: cor,
                 shape: BoxShape.circle,
               ),
             ),
@@ -249,7 +461,7 @@ class _CartaoHistorico extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    BancoMock.rotaPorId(entrada.rotaId).nome,
+                    nomeRota,
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 4),
@@ -268,11 +480,11 @@ class _CartaoHistorico extends StatelessWidget {
               ),
             ),
             Text(
-              BancoMock.duracaoDeslocamento(entrada),
+              duracao,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                color: BancoMock.rotaPorId(entrada.rotaId).cor,
+                color: cor,
               ),
             ),
           ],

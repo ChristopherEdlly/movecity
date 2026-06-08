@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../core/mock/banco_mock.dart';
 import '../../core/repositories/deslocamento_repositorio.dart';
@@ -156,6 +157,41 @@ class _HomeScreenState extends State<HomeScreen> {
     return lista.last.data;
   }
 
+  bool get _temHistorico => _deslocamentos.isNotEmpty;
+
+  Rota get _rotaSugerida {
+    if (_deslocamentos.isEmpty) return _rotas.first;
+    final contagem = <int, int>{};
+    for (final d in _deslocamentos) {
+      contagem[d.rotaId] = (contagem[d.rotaId] ?? 0) + 1;
+    }
+    final idMaisUsado = contagem.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+    try {
+      return _rotas.firstWhere((r) => r.id == idMaisUsado);
+    } catch (_) {
+      return _rotas.first;
+    }
+  }
+
+  String _saidaUsualDaRota(int rotaId) {
+    final lista = _deslocamentos.where((d) => d.rotaId == rotaId).toList();
+    if (lista.isEmpty) return '';
+    int totalMin = 0;
+    int count = 0;
+    for (final d in lista) {
+      try {
+        final partes = d.horarioSaida.split(':');
+        totalMin += int.parse(partes[0]) * 60 + int.parse(partes[1]);
+        count++;
+      } catch (_) {}
+    }
+    if (count == 0) return '';
+    final mediaMin = totalMin ~/ count;
+    final h = mediaMin ~/ 60;
+    final m = mediaMin % 60;
+    return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+  }
+
   // ─── Build ────────────────────────────────────────────────────
 
   @override
@@ -180,8 +216,8 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildCabecalho(),
             const SizedBox(height: 12),
             if (_ehNovoUsuario) ..._conteudoNovoUsuario(context),
-            if (!_ehNovoUsuario && BancoMock.sugestaoAtual != null) ..._conteudoComSugestao(context),
-            if (!_ehNovoUsuario && BancoMock.sugestaoAtual == null) ..._conteudoNormal(context),
+            if (!_ehNovoUsuario && _temHistorico) ..._conteudoComSugestao(context),
+            if (!_ehNovoUsuario && !_temHistorico) ..._conteudoNormal(context),
           ],
         ),
       ),
@@ -228,7 +264,7 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '$_saudacao, ${BancoMock.usuarioLogado.nome}!',
+            '$_saudacao, ${FirebaseAuth.instance.currentUser?.displayName ?? FirebaseAuth.instance.currentUser?.email?.split('@')[0] ?? 'Usuário'}!',
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 6),
@@ -328,26 +364,13 @@ class _HomeScreenState extends State<HomeScreen> {
       ..._buildSecaoRotas(context),
       const SizedBox(height: 20),
       ..._buildGrafico(),
-      if (BancoMock.dicaAtual != null) ...[
-        const SizedBox(height: 12),
-        Container(
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: const Color(0xFFE9F3DE),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFA3CC59), width: 0.75),
-          ),
-          child: Text(BancoMock.dicaAtual!, style: const TextStyle(fontSize: 12, color: Color(0xFF3B6D11))),
-        ),
-      ] else
-        const SizedBox(height: 24),
+      const SizedBox(height: 24),
     ];
   }
 
   List<Widget> _conteudoComSugestao(BuildContext context) {
-    final sugestao = BancoMock.sugestaoAtual!;
-    final alerta = BancoMock.alertaAtual;
+    final rota = _rotaSugerida;
+    final saidaUsual = _saidaUsualDaRota(rota.id);
 
     return [
       Container(
@@ -376,10 +399,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(sugestao.rota, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(rota.nome, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
                   Text(
-                    '${sugestao.transporte} · ${sugestao.tempoEstimado} · Saída ideal: ${sugestao.saidaIdeal}',
+                    '${rota.transporte} · ~${rota.tempoEstimadoMin} min${saidaUsual.isNotEmpty ? ' · Saída usual: $saidaUsual' : ''}',
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
@@ -400,34 +423,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      if (alerta != null) ...[
-        const SizedBox(height: 12),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF3E0),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFFFB74D), width: 0.75),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('!  ', style: TextStyle(color: Color(0xFFCC6600), fontWeight: FontWeight.bold, fontSize: 13)),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(alerta.titulo, style: const TextStyle(color: Color(0xFFCC6600), fontWeight: FontWeight.w600, fontSize: 13)),
-                    const SizedBox(height: 2),
-                    Text(alerta.mensagem, style: const TextStyle(color: Color(0xFFCC6600), fontSize: 12)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
       const SizedBox(height: 20),
       ..._buildSecaoRotas(context),
       const SizedBox(height: 20),
