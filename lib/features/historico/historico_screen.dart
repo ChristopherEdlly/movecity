@@ -1,6 +1,7 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/mock/banco_mock.dart';
+import 'package:flutter/material.dart';
 import '../../core/repositories/deslocamento_repositorio.dart';
 import '../../core/repositories/rota_repositorio.dart';
 import '../../core/widgets/barra_navegacao.dart';
@@ -31,7 +32,7 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
   }
 
   void _ouvirRotas() {
-    _assinaturaRotas = RotaRepositorio.buscarRotas(BancoMock.usuarioLogado.id).listen(
+    _assinaturaRotas = RotaRepositorio.buscarRotas(FirebaseAuth.instance.currentUser!.uid).listen(
       (rotas) {
         if (!mounted) return;
         setState(() {
@@ -430,7 +431,7 @@ class _CartaoHistorico extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => EditarDeslocamentoScreen(entrada: entrada),
+            builder: (_) => EditarDeslocamentoScreen(entrada: entrada, nomeRota: nomeRota),
           ),
         );
       },

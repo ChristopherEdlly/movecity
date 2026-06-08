@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import '../../core/mock/banco_mock.dart';
+import 'package:flutter/material.dart';
 import '../../core/repositories/deslocamento_repositorio.dart';
 import '../../core/repositories/rota_repositorio.dart';
 import '../../core/widgets/barra_navegacao.dart';
@@ -32,7 +32,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _ouvirRotas() {
-    _assinaturaRotas = RotaRepositorio.buscarRotas(BancoMock.usuarioLogado.id).listen(
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    _assinaturaRotas = RotaRepositorio.buscarRotas(uid).listen(
       (rotas) {
         if (!mounted) return;
         setState(() {
@@ -264,7 +265,7 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '$_saudacao, ${FirebaseAuth.instance.currentUser?.displayName ?? FirebaseAuth.instance.currentUser?.email?.split('@')[0] ?? 'Usuário'}!',
+            '$_saudacao, ${FirebaseAuth.instance.currentUser?.displayName ?? 'Usuário'}!',
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 6),
