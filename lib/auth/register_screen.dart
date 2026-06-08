@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:movecity/app_routes.dart';
-
+import 'package:movecity/core/services/auth_service.dart';
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
@@ -18,7 +18,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
  
   bool _isLoading = false;
   bool _cadastroConcluido = false;
-
+  bool _mostrarSenha = false;
+  bool _mostrarConfirmarSenha = false;
 
   final Color brandGreen = const Color(0xFF1D9E75);
 
@@ -40,7 +41,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor, preencha todos os campos.')));
         return;
       }
-     
+
+      final emailRegex = RegExp(r'^[\w.-]+@souunit\.com\.br$'); 
+      if (!emailRegex.hasMatch(_emailController.text.trim())) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('O cadastro pode ser realizado somente com conta @souunit.com.br')),
+        );
+        return;
+      }
+
 
       if (_senhaController.text != _confirmarSenhaController.text) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('As senhas não coincidem.')));
@@ -49,26 +58,31 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
 
       
-      if (_senhaController.text.length < 6) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('A senha deve ter pelo menos 6 caracteres.')));
+      final senha = _senhaController.text.trim();
+
+      final senhaRegex = RegExp(
+        r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,8}$',
+      );
+
+      if (!senhaRegex.hasMatch(senha)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Senha deve ter 6-8 caracteres, com maiúscula, minúscula, número e caracter especial.',
+            ),
+          ),
+        );
         return;
       }
-
-
-      
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(_emailController.text.trim())) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, insira um e-mail válido.')),
-      );
-      return;
-    }
-    setState(() => _isLoading = true);
+          setState(() => _isLoading = true);
 
 
     try {
       
-      await Future.delayed(const Duration(seconds: 2));
+      await AuthService().cadastrar(
+        _emailController.text.trim(),
+        _senhaController.text.trim(),
+      );
 
 
       
@@ -78,7 +92,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Não foi possível se cadastrar. Tente novamente.')),
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''),
+            ),
+          ),
         );
       }
     } finally {
@@ -109,7 +125,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     SizedBox(height: screenHeight * 0.25),
                     Text('MOVE CITY',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.1, fontWeight: FontWeight.bold, color: Color(0xFF1D9E75))
+                      style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.1, fontWeight: FontWeight.bold, color: brandGreen)
                     ),
                     SizedBox(
                       height: MediaQuery.of(context).size.height * 0.08,
@@ -137,9 +153,42 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     ] else ...[
                       _buildTextField(controller: _emailController, hint: 'E-mail'),
                       const SizedBox(height: 16),
-                      _buildTextField(controller: _senhaController, hint: 'Senha', obscure: true),
+                      _buildTextField(
+                          controller: _senhaController,
+                          hint: 'Senha',
+                          obscure: !_mostrarSenha,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _mostrarSenha
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _mostrarSenha = !_mostrarSenha;
+                              });
+                            },
+                          ),
+                        ),
                       const SizedBox(height: 16),
-                      _buildTextField(controller: _confirmarSenhaController, hint: 'Confirme a senha', obscure: true),
+                      _buildTextField(
+                          controller: _confirmarSenhaController,
+                          hint: 'Confirme a senha',
+                          obscure: !_mostrarConfirmarSenha,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _mostrarConfirmarSenha
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _mostrarConfirmarSenha =
+                                    !_mostrarConfirmarSenha;
+                              });
+                            },
+                          ),
+                        ),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _isLoading ? null : _realizarCadastro,
@@ -164,11 +213,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   }
 
 
-  Widget _buildTextField({required TextEditingController controller, required String hint, bool obscure = false}) {
+  Widget _buildTextField({required TextEditingController controller, required String hint, bool obscure = false, Widget? suffixIcon,}) {
     return Container(
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.07), blurRadius: 10)]),
       child: TextField(controller: controller, obscureText: obscure, decoration: InputDecoration(hintText: hint,  hintStyle: const TextStyle(fontWeight:FontWeight.normal,
-       fontSize: 14, color: Color(0xFF80807E),), contentPadding: const EdgeInsets.all(22), border: InputBorder.none)),
+       fontSize: 14, color: Color(0xFF80807E),), contentPadding: const EdgeInsets.all(22), border: InputBorder.none, suffixIcon: suffixIcon,)),
     );
   }
 }
