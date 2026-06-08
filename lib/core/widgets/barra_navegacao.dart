@@ -21,6 +21,7 @@ class BarraNavegacao extends StatelessWidget {
         BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline), label: 'Registrar'),
         BottomNavigationBarItem(icon: Icon(Icons.list_outlined), label: 'Rotas'),
         BottomNavigationBarItem(icon: Icon(Icons.history_outlined), label: 'Histórico'),
+        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Perfil'),
       ],
     );
   }
@@ -36,6 +37,8 @@ class BarraNavegacao extends StatelessWidget {
         Navigator.pushNamedAndRemoveUntil(context, AppRoutes.minhasRotas, (_) => false);
       case 3:
         Navigator.pushNamedAndRemoveUntil(context, AppRoutes.historico, (_) => false);
+      case 4:
+        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.perfil, (_) => false);
     }
   }
 }
