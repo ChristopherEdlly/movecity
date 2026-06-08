@@ -92,9 +92,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''),
+          SnackBar(content: Text(e.toString()),
             ),
-          ),
+          
         );
       }
     } finally {

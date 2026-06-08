@@ -63,8 +63,8 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceFirst('Exception: ', '')),
-          ),
+            content: Text(e.toString())),
+      
         );
       }
     } finally {
@@ -129,8 +129,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 16),
 
                  OutlinedButton(
-                  onPressed: () {
-                    
+                  onPressed: () async {
+                    try {
+                      final user = await AuthService().loginComGoogle();
+
+                      if (user != null && mounted) {
+                        Navigator.pushReplacementNamed(context, AppRoutes.home);
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(e.toString())),
+                      );
+                    }
                   },
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 22),
